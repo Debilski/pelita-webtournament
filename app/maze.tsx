@@ -171,6 +171,24 @@ const createPath = (cluster: Pos[]) => {
     }
   };
 
+  if (cluster.length === 1) {
+    // Widen the dot so that it does not look like food
+    const [x, y] = cluster[0];
+
+    const px = x * cellSize + 0.5 * cellSize;
+    const py = y * cellSize + offset;
+
+    return [
+      `M ${px},${py}`,
+      `l ${-offset} 0`,
+      `a 1,1 0 0 0 0,${cellSize - 2*offset}`,
+      `l ${2 * offset} 0`,
+      `a 1,1 0 0 0 0,${- cellSize + 2*offset}`,
+      `Z`
+    ].join(" ");
+
+  }
+
   const pathCommands = cluster.flatMap((startCell) => {
     // iterate through all possible starting points in all cells (unless already visited)
     const paths = [0, 1, 2, 3].map(startRefPoint => {
