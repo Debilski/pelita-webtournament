@@ -60,113 +60,121 @@ const createPath = (cluster: Pos[]) => {
     |       0       7
     |       |       |
     |       |       |
-    +-2-----+-----1-+
+    +-1-----+-----3-+
     |       |       |
     |       |       |
-    8       3       |
-    +-------+----11-+
+    5       2       |
+    +-------+-----6-+
 
   */
+
+  const refPoint0 = [0.5 * cellSize, offset];
+  const refPoint1 = [offset, 0.5 * cellSize];
+  const refPoint2 = [0.5 * cellSize, cellSize - offset];
+  const refPoint3 = [cellSize - offset, 0.5 * cellSize];
+
+  const refPoint4 = [offset, 0];
+  const refPoint5 = [0, cellSize - offset];
+  const refPoint6 = [cellSize - offset, cellSize];
+  const refPoint7 = [cellSize, offset];
+
+  const refPoints = [
+    refPoint0, refPoint1, refPoint2, refPoint3,
+    refPoint4, refPoint5, refPoint6, refPoint7
+  ];
+
   type PathMove = { next: [Pos, number], path: string };
 
+  const makeNextLine = (x: number, y: number, nextRefPoint: number): PathMove => {
+    const px = x * cellSize + refPoints[nextRefPoint][0];
+    const py = y * cellSize + refPoints[nextRefPoint][1];
+    return { next: [[x, y], nextRefPoint], path: `L ${px},${py}` };
+  }
+
+  const makeNextCurve = (x: number, y: number, nextRefPoint: number): PathMove => {
+    const px = x * cellSize + refPoints[nextRefPoint][0];
+    const py = y * cellSize + refPoints[nextRefPoint][1];
+    return { next: [[x, y], nextRefPoint], path: `A ${radius},${radius} 0 0 0 ${px},${py}` };
+  }
+
+  const makeNextCurveInner = (x: number, y: number, nextRefPoint: number): PathMove => {
+    const px = x * cellSize + refPoints[nextRefPoint][0];
+    const py = y * cellSize + refPoints[nextRefPoint][1];
+    return { next: [[x, y], nextRefPoint], path: `A ${radius_inner},${radius_inner} 0 0 1 ${px},${py}` };
+  }
+
   const move = (x: number, y: number, corner: number): PathMove | undefined => {
-    let refPoint0 = [0.5 * cellSize, offset];
-    let refPoint1 = [cellSize - offset, 0.5 * cellSize];
-    let refPoint2 = [offset, 0.5 * cellSize];
-    let refPoint3 = [0.5 * cellSize, cellSize - offset];
-
-    let refPoint4 = [offset, 0];
-    let refPoint7 = [cellSize, offset];
-    let refPoint8 = [0, cellSize - offset];
-    let refPoint11 = [cellSize - offset, cellSize];
-
     switch (corner) {
       case 0:
         // exit if wall to the top
         if (cluster.some(([bx, by]) => bx === x && by === y - 1)) return;
         // check if there is a wall to the left
         if (cluster.some(([bx, by]) => bx === x - 1 && by === y)) {
-          return { next: [[x - 1, y], 7], path: `l ${- cellSize / 2} 0` };
+          return makeNextLine(x - 1, y, 7);
         } else {
-          const px = x * cellSize + refPoint2[0];
-          const py = y * cellSize + refPoint2[1];
-          return { next: [[x, y], 2], path: `A ${radius} ${radius} 0 0 0 ${px} ${py}` };
+          return makeNextCurve(x, y, 1);
         }
 
       case 1:
-        // exit if wall to the right
-        if (cluster.some(([bx, by]) => bx === x + 1 && by === y)) return;
-        // check if there is a wall to the top
-        if (cluster.some(([bx, by]) => bx === x && by === y - 1)) {
-          return { next: [[x, y - 1], 11], path: `l 0 ${- cellSize / 2}` };
-        } else {
-          const px = x * cellSize + refPoint0[0];
-          const py = y * cellSize + refPoint0[1];
-          return { next: [[x, y], 0], path: `A ${radius} ${radius} 0 0 0 ${px} ${py}` };
-        }
-
-      case 2:
         // exit if wall to the left
         if (cluster.some(([bx, by]) => bx === x - 1 && by === y)) return;
         // check if there is a wall to the bottom
         if (cluster.some(([bx, by]) => bx === x && by === y + 1)) {
-          return { next: [[x, y + 1], 4], path: `l 0,${cellSize / 2}` };
+          return makeNextLine(x, y + 1, 4);
         } else {
-          const px = x * cellSize + refPoint3[0];
-          const py = y * cellSize + refPoint3[1];
-          return { next: [[x, y], 3], path: `A ${radius},${radius} 0 0 0 ${px},${py}` };
+          return makeNextCurve(x, y, 2);
         }
 
-      case 3:
+      case 2:
         // exit if wall to the bottom
         if (cluster.some(([bx, by]) => bx === x && by === y + 1)) return;
         // check if there is a wall to the right
         if (cluster.some(([bx, by]) => bx === x + 1 && by === y)) {
-          return { next: [[x + 1, y], 8], path: `l ${cellSize / 2},0` };
+          return makeNextLine(x + 1, y, 5);
         } else {
-          const px = x * cellSize + refPoint1[0];
-          const py = y * cellSize + refPoint1[1];
-          return { next: [[x, y], 1], path: `A ${radius},${radius} 0 0 0 ${px},${py}` };
+          return makeNextCurve(x, y, 3);
+        }
+
+      case 3:
+        // exit if wall to the right
+        if (cluster.some(([bx, by]) => bx === x + 1 && by === y)) return;
+        // check if there is a wall to the top
+        if (cluster.some(([bx, by]) => bx === x && by === y - 1)) {
+          return makeNextLine(x, y - 1, 6);
+        } else {
+          return makeNextCurve(x, y, 0);
         }
 
       case 4:
         // check if there is a wall to the left
         if (cluster.some(([bx, by]) => bx === x - 1 && by === y)) {
-          const px = (x - 1) * cellSize + refPoint7[0];
-          const py = y * cellSize + refPoint7[1];
-          return { next: [[x - 1, y], 7], path: `A ${radius_inner},${radius_inner} 0 0 1 ${px},${py}` };
+          return makeNextCurveInner(x - 1, y, 7);
         } else {
-          return { next: [[x, y], 2], path: `l 0 ${cellSize / 2}` };
+          return makeNextLine(x, y, 1);
+        }
+
+      case 5:
+        // check if there is a wall to the bottom
+        if (cluster.some(([bx, by]) => bx === x && by === y + 1)) {
+          return makeNextCurveInner(x, y + 1, 4);
+        } else {
+          return makeNextLine(x, y, 2);
+        }
+
+      case 6:
+        // check if there is a wall to the right
+        if (cluster.some(([bx, by]) => bx === x + 1 && by === y)) {
+          return makeNextCurveInner(x + 1, y, 5);
+        } else {
+          return makeNextLine(x, y, 3);
         }
 
       case 7:
         // check if there is a wall to the top
         if (cluster.some(([bx, by]) => bx === x && by === y - 1)) {
-          const px = x * cellSize + refPoint11[0];
-          const py = (y - 1) * cellSize + refPoint11[1];
-          return { next: [[x, y - 1], 11], path: `A ${radius_inner},${radius_inner} 0 0 1 ${px},${py}` };
+          return makeNextCurveInner(x, y - 1, 6);
         } else {
-          return { next: [[x, y], 0], path: `l ${- cellSize / 2},0` };
-        }
-
-      case 8:
-        // check if there is a wall to the bottom
-        if (cluster.some(([bx, by]) => bx === x && by === y + 1)) {
-          const px = x * cellSize + refPoint4[0];
-          const py = (y + 1) * cellSize + refPoint4[1];
-          return { next: [[x, y + 1], 4], path: `A ${radius_inner},${radius_inner} 0 0 1 ${px},${py}` };
-        } else {
-          return { next: [[x, y], 3], path: `l ${cellSize / 2},0` };
-        }
-
-      case 11:
-        // check if there is a wall to the right
-        if (cluster.some(([bx, by]) => bx === x + 1 && by === y)) {
-          const px = (x + 1) * cellSize + refPoint8[0];
-          const py = y * cellSize + refPoint8[1];
-          return { next: [[x + 1, y], 8], path: `A ${radius_inner},${radius_inner} 0 0 1 ${px},${py}` };
-        } else {
-          return { next: [[x, y], 1], path: `l 0,${- cellSize / 2}` };
+          return makeNextLine(x, y, 0);
         }
     }
   };
@@ -181,12 +189,11 @@ const createPath = (cluster: Pos[]) => {
     return [
       `M ${px},${py}`,
       `l ${-offset} 0`,
-      `a 1,1 0 0 0 0,${cellSize - 2*offset}`,
+      `a 1,1 0 0 0 0,${cellSize - 2 * offset}`,
       `l ${2 * offset} 0`,
-      `a 1,1 0 0 0 0,${- cellSize + 2*offset}`,
+      `a 1,1 0 0 0 0,${- cellSize + 2 * offset}`,
       `Z`
     ].join(" ");
-
   }
 
   const pathCommands = cluster.flatMap((startCell) => {
@@ -197,14 +204,8 @@ const createPath = (cluster: Pos[]) => {
 
       let refPoint = startRefPoint;
 
-      let refPointLoc = [[0.5 * cellSize, offset],
-        [cellSize - offset, 0.5 * cellSize],
-        [offset, 0.5 * cellSize],
-        [0.5 * cellSize, cellSize - offset]
-      ];
-
-      const px = x * cellSize + refPointLoc[refPoint][0];
-      const py = y * cellSize + refPointLoc[refPoint][1];
+      const px = x * cellSize + refPoints[refPoint][0];
+      const py = y * cellSize + refPoints[refPoint][1];
 
       let pathCommands = [];
       pathCommands.push([`M ${px},${py}`]);
