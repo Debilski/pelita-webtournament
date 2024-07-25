@@ -1,18 +1,21 @@
 "use client"
 
 import React, {
-  useEffect,
-  useState
+  useEffect
 } from "react";
 
 import anime from 'animejs/lib/anime.es.js';
 
-const cellSize = 32; // Size of each cell in the SVG
-const offset = 0.15 * cellSize; // Offset for the outline
+type Pos = [number, number];
 
-const findClusters = (shape: [number, number], walls: [number, number][]) => {
+const cellSize = 32; // Size of each cell in the SVG
+const offset = 0.2 * cellSize; // Offset for the outline
+let radius = 0.5 * cellSize - offset;
+let radius_inner = offset;
+
+const findClusters = (shape: Pos, walls: Pos[]) => {
   const [width, height] = shape;
-  const clusters: [number, number][][] = [];
+  const clusters: Pos[][] = [];
   const visited = new Set<string>();
 
   const directions = [
@@ -21,7 +24,7 @@ const findClusters = (shape: [number, number], walls: [number, number][]) => {
 
   const inBounds = (x: number, y: number) => x >= 0 && x < width && y >= 0 && y < height;
 
-  const dfs = (x: number, y: number, cluster: [number, number][]) => {
+  const dfs = (x: number, y: number, cluster: Pos[]) => {
     if (!inBounds(x, y) || visited.has(`${x},${y}`) || !walls.some(([bx, by]) => bx === x && by === y)) {
       return;
     }
@@ -34,7 +37,7 @@ const findClusters = (shape: [number, number], walls: [number, number][]) => {
 
   for (const [x, y] of walls) {
     if (!visited.has(`${x},${y}`)) {
-      const cluster: [number, number][] = [];
+      const cluster: Pos[] = [];
       dfs(x, y, cluster);
       clusters.push(cluster);
     }
@@ -44,122 +47,181 @@ const findClusters = (shape: [number, number], walls: [number, number][]) => {
 };
 
 // Generate the path for a single cluster using a perimeter tracing algorithm with inner and outer boundaries
-const createPath = (cluster: [number, number][]) => {
-  const pathCommands: string[] = [];
+const createPath = (cluster: Pos[]) => {
   const visitedCorners = new Set<string>();
+  const visitedCells = new Set<string>();
 
-  const startPoint = cluster[0];
-  let [x, y] = startPoint;
-  let corner = 0;
 
-  const move = () => {
+  /* Corners:
+
+    Reference points
+
+    +-4-----+-------+
+    |       0       7
+    |       |       |
+    |       |       |
+    +-2-----+-----1-+
+    |       |       |
+    |       |       |
+    8       3       |
+    +-------+----11-+
+
+  */
+  type PathMove = { next: [Pos, number], path: string };
+
+  const move = (x: number, y: number, corner: number): PathMove | undefined => {
+    let refPoint0 = [0.5 * cellSize, offset];
+    let refPoint1 = [cellSize - offset, 0.5 * cellSize];
+    let refPoint2 = [offset, 0.5 * cellSize];
+    let refPoint3 = [0.5 * cellSize, cellSize - offset];
+
+    let refPoint4 = [offset, 0];
+    let refPoint7 = [cellSize, offset];
+    let refPoint8 = [0, cellSize - offset];
+    let refPoint11 = [cellSize - offset, cellSize];
+
     switch (corner) {
       case 0:
+        // exit if wall to the top
+        if (cluster.some(([bx, by]) => bx === x && by === y - 1)) return;
         // check if there is a wall to the left
         if (cluster.some(([bx, by]) => bx === x - 1 && by === y)) {
-          corner = 1;
-          x -= 1;
+          return { next: [[x - 1, y], 7], path: `l ${- cellSize / 2} 0` };
         } else {
-          corner = 2;
+          const px = x * cellSize + refPoint2[0];
+          const py = y * cellSize + refPoint2[1];
+          return { next: [[x, y], 2], path: `A ${radius} ${radius} 0 0 0 ${px} ${py}` };
         }
-        break;
 
       case 1:
+        // exit if wall to the right
+        if (cluster.some(([bx, by]) => bx === x + 1 && by === y)) return;
         // check if there is a wall to the top
         if (cluster.some(([bx, by]) => bx === x && by === y - 1)) {
-          corner = 3;
-          y -= 1;
+          return { next: [[x, y - 1], 11], path: `l 0 ${- cellSize / 2}` };
         } else {
-          corner = 0;
+          const px = x * cellSize + refPoint0[0];
+          const py = y * cellSize + refPoint0[1];
+          return { next: [[x, y], 0], path: `A ${radius} ${radius} 0 0 0 ${px} ${py}` };
         }
-        break;
 
       case 2:
+        // exit if wall to the left
+        if (cluster.some(([bx, by]) => bx === x - 1 && by === y)) return;
         // check if there is a wall to the bottom
         if (cluster.some(([bx, by]) => bx === x && by === y + 1)) {
-          corner = 0;
-          y += 1;
+          return { next: [[x, y + 1], 4], path: `l 0,${cellSize / 2}` };
         } else {
-          corner = 3;
+          const px = x * cellSize + refPoint3[0];
+          const py = y * cellSize + refPoint3[1];
+          return { next: [[x, y], 3], path: `A ${radius},${radius} 0 0 0 ${px},${py}` };
         }
-        break;
 
       case 3:
+        // exit if wall to the bottom
+        if (cluster.some(([bx, by]) => bx === x && by === y + 1)) return;
         // check if there is a wall to the right
         if (cluster.some(([bx, by]) => bx === x + 1 && by === y)) {
-          corner = 2;
-          x += 1;
+          return { next: [[x + 1, y], 8], path: `l ${cellSize / 2},0` };
         } else {
-          corner = 1;
+          const px = x * cellSize + refPoint1[0];
+          const py = y * cellSize + refPoint1[1];
+          return { next: [[x, y], 1], path: `A ${radius},${radius} 0 0 0 ${px},${py}` };
         }
-        break;
 
-      default:
-        break;
+      case 4:
+        // check if there is a wall to the left
+        if (cluster.some(([bx, by]) => bx === x - 1 && by === y)) {
+          const px = (x - 1) * cellSize + refPoint7[0];
+          const py = y * cellSize + refPoint7[1];
+          return { next: [[x - 1, y], 7], path: `A ${radius_inner},${radius_inner} 0 0 1 ${px},${py}` };
+        } else {
+          return { next: [[x, y], 2], path: `l 0 ${cellSize / 2}` };
+        }
+
+      case 7:
+        // check if there is a wall to the top
+        if (cluster.some(([bx, by]) => bx === x && by === y - 1)) {
+          const px = x * cellSize + refPoint11[0];
+          const py = (y - 1) * cellSize + refPoint11[1];
+          return { next: [[x, y - 1], 11], path: `A ${radius_inner},${radius_inner} 0 0 1 ${px},${py}` };
+        } else {
+          return { next: [[x, y], 0], path: `l ${- cellSize / 2},0` };
+        }
+
+      case 8:
+        // check if there is a wall to the bottom
+        if (cluster.some(([bx, by]) => bx === x && by === y + 1)) {
+          const px = x * cellSize + refPoint4[0];
+          const py = (y + 1) * cellSize + refPoint4[1];
+          return { next: [[x, y + 1], 4], path: `A ${radius_inner},${radius_inner} 0 0 1 ${px},${py}` };
+        } else {
+          return { next: [[x, y], 3], path: `l ${cellSize / 2},0` };
+        }
+
+      case 11:
+        // check if there is a wall to the right
+        if (cluster.some(([bx, by]) => bx === x + 1 && by === y)) {
+          const px = (x + 1) * cellSize + refPoint8[0];
+          const py = y * cellSize + refPoint8[1];
+          return { next: [[x + 1, y], 8], path: `A ${radius_inner},${radius_inner} 0 0 1 ${px},${py}` };
+        } else {
+          return { next: [[x, y], 1], path: `l 0,${- cellSize / 2}` };
+        }
     }
   };
-  {
 
-    let startCorner = 3;
-    corner = startCorner;
+  const pathCommands = cluster.flatMap((startCell) => {
+    // iterate through all possible starting points in all cells (unless already visited)
+    const paths = [0, 1, 2, 3].map(startRefPoint => {
+      let [x, y] = startCell;
+      if (visitedCorners.has(`${x},${y},${startRefPoint}`)) return "";
 
-    const px = x * cellSize + (corner % 2 === 0 ? offset : cellSize - offset);
-    const py = y * cellSize + (corner < 2 ? offset : cellSize - offset);
+      let refPoint = startRefPoint;
 
-    pathCommands.push(`M${px},${py}`);
+      let refPointLoc = [[0.5 * cellSize, offset],
+        [cellSize - offset, 0.5 * cellSize],
+        [offset, 0.5 * cellSize],
+        [0.5 * cellSize, cellSize - offset]
+      ];
 
-    do {
-      const node = `${x},${y},${corner}`;
-      if (visitedCorners.has(node)) {
-        break;
-      }
+      const px = x * cellSize + refPointLoc[refPoint][0];
+      const py = y * cellSize + refPointLoc[refPoint][1];
 
-      visitedCorners.add(node);
+      let pathCommands = [];
+      pathCommands.push([`M ${px},${py}`]);
 
-      const px = x * cellSize + (corner % 2 === 0 ? offset : cellSize - offset);
-      const py = y * cellSize + (corner < 2 ? offset : cellSize - offset);
+      do {
+        const node = `${x},${y},${refPoint}`;
+        if (visitedCorners.has(node)) {
+          break;
+        }
 
-      pathCommands.push(`L${px} ${py}`);
-      move()
-    } while (!(x === startPoint[0] && y === startPoint[1] && corner === startCorner));
+        visitedCorners.add(node);
+        visitedCells.add(`${x},${y}`);
 
-    pathCommands.push('Z'); // Close the path
-  };
+        let pathMove = move(x, y, refPoint);
+        if (!pathMove) return "";
+        let path = "";
+        ({ next: [[x, y], refPoint], path: path } = pathMove);
 
-  const node = `${x},${y},${0}`;
-  if (!visitedCorners.has(node)) {
-    let startCorner = 0;
-    corner = startCorner;
+        pathCommands.push([path]);
+      } while (!(x === startCell[0] && y === startCell[1] && refPoint === startRefPoint));
 
-    const px = x * cellSize + (corner % 2 === 0 ? offset : cellSize - offset);
-    const py = y * cellSize + (corner < 2 ? offset : cellSize - offset);
+      pathCommands.push(["Z"]); // Close the path
 
-    pathCommands.push(`M${px},${py}`);
+      const joined = pathCommands.join(" ");
+      return joined;
+    });
+    return paths;
+  });
 
-    do {
-      const node = `${x},${y},${corner}`;
-      if (visitedCorners.has(node)) {
-        break;
-      }
-
-      visitedCorners.add(node);
-
-      const px = x * cellSize + (corner % 2 === 0 ? offset : cellSize - offset);
-      const py = y * cellSize + (corner < 2 ? offset : cellSize - offset);
-
-      pathCommands.push(`L${px},${py}`);
-      move()
-    } while (!(x === startPoint[0] && y === startPoint[1] && corner === startCorner));
-
-    pathCommands.push('Z'); // Close the path
-  };
-
-  //console.log(pathCommands, cluster);
-  return pathCommands.join(' ');
+  console.log(pathCommands);
+  return pathCommands.join(" ");
 };
 
 
-function Bot({ position, color, width }: { position: [number, number], color: string, width: number }) {
+function Bot({ position, color, width }: { position: Pos, color: string, width: number }) {
   const leftSide = position[0] < width / 2;
   const inHomezone = () => {
     switch (color) {
@@ -192,16 +254,17 @@ function Bot({ position, color, width }: { position: [number, number], color: st
   )
 }
 
+
 function Maze({ game_uuid, shape, walls, food, a, b, x, y, whowins, gameover }:
   {
     game_uuid: string,
-    shape: [number, number],
-    walls: [number, number][],
-    food: [number, number][],
-    a: [number, number],
-    b: [number, number],
-    x: [number, number],
-    y: [number, number],
+    shape: Pos,
+    walls: Pos[],
+    food: Pos[],
+    a: Pos,
+    b: Pos,
+    x: Pos,
+    y: Pos,
     whowins: number | null,
     gameover: boolean
   }
@@ -223,7 +286,8 @@ function Maze({ game_uuid, shape, walls, food, a, b, x, y, whowins, gameover }:
         })
         .add({
           targets: '#mazebox #maze path',
-          fill: ['rgb(214, 219, 220)', "#faa"], // ffa
+          //fill: ['rgb(214, 219, 220)', "#faa"], // ffa
+          fillOpacity: [0, 0.7], // ffa
           easing: 'linear',
           duration: 2000
         }, 2000)
@@ -252,7 +316,7 @@ function Maze({ game_uuid, shape, walls, food, a, b, x, y, whowins, gameover }:
           duration: 2000,
         }, 3500);
     }
-  }, [walls]);
+  }, [walls, game_uuid]);
 
 
   useEffect(() => {
@@ -327,6 +391,12 @@ function Maze({ game_uuid, shape, walls, food, a, b, x, y, whowins, gameover }:
 
 
         <defs>
+          <linearGradient id="grad" gradientUnits="userSpaceOnUse">
+            <stop stopColor="blue" offset="0" />
+            <stop stopColor="blue" offset="50%" />
+            <stop stopColor="red" offset="50%" />
+            <stop stopColor="red" offset="100%" />
+          </linearGradient>
           <g id="pacman">
             <path d="M 9.98 7.73
         A 4.38 4.38 0 1 1 9.98 3.8
@@ -386,7 +456,9 @@ function Maze({ game_uuid, shape, walls, food, a, b, x, y, whowins, gameover }:
               y={y * cellSize}
               width={cellSize}
               height={cellSize}
-              fill="transparent"
+              opacity="0"
+              // fill="lightblue"
+              stroke="lightgrey"
             />
           ))}
           {clusters.map((cluster, index) => (
@@ -394,9 +466,10 @@ function Maze({ game_uuid, shape, walls, food, a, b, x, y, whowins, gameover }:
               className="maze"
               key={`${cluster[0]},${cluster[1]}-${cluster.length}`}
               d={createPath(cluster)}
-              stroke="darkblue"
+              // stroke="lightblue"
+              stroke="url(#grad)"
               strokeWidth="2"
-              fill="transparent"
+              fill="#ffa"
               strokeLinecap="round"
               strokeLinejoin="bevel"
             />
@@ -413,13 +486,13 @@ function Maze({ game_uuid, shape, walls, food, a, b, x, y, whowins, gameover }:
 
         {
           gameover ? (<text fontSize="100" className="gameover"
-          x="50%" y="50%"
-          dominantBaseline="middle"
-          textAnchor="middle"
+            x="50%" y="50%"
+            dominantBaseline="middle"
+            textAnchor="middle"
           >
-          GAME OVER
-        </text>) : null
-          }
+            GAME OVER
+          </text>) : null
+        }
 
       </svg>
     </div>
