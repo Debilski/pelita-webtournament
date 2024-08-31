@@ -1,14 +1,18 @@
 "use client"
 
 import React, {
-  useEffect
+  useEffect,
+  useMemo,
+  useRef,
+  useState
 } from "react";
 
 import anime from 'animejs/lib/anime.es.js';
+import { AnimatePresence, motion } from "framer-motion"
 
 type Pos = [number, number];
 
-const cellSize = 32; // Size of each cell in the SVG
+const cellSize = 26; // Size of each cell in the SVG
 const offset = 0.2 * cellSize; // Offset for the outline
 let radius = 0.5 * cellSize - offset;
 let radius_inner = offset;
@@ -235,12 +239,89 @@ const createPath = (cluster: Pos[]) => {
     return paths;
   });
 
-  console.log(pathCommands);
   return pathCommands.join(" ");
 };
 
+function usePrevious(value: any) {
+  const ref = useRef();
+  useEffect(() => {
+    ref.current = value; //assign the value of ref to the argument
+  }, [value]); //this code will run when the value of 'value' changes
+  return ref.current; //in the end, return the current ref value.
+}
 
-function Bot({ position, color, width }: { position: Pos, color: string, width: number }) {
+function Food({ position, color }: { position: Pos, color: string }) {
+  const [x, y] = position;
+  return (
+    <motion.circle
+      cx={(0.5 + x) * cellSize}
+      cy={(0.5 + y) * cellSize}
+
+      r={cellSize / 5}
+      opacity={1}
+      className={color}
+      // transition={{ duration: 1 }}
+      // initial={{ opacity: 0 }}
+      // animate={{ opacity: 1 }}
+      exit={{ opacity: 0, r: cellSize }}
+    />
+  )
+}
+
+// // from https://www.30secondsofcode.org/react/s/use-interval-explained/
+// const useInterval = (callback: any, delay: number) => {
+//   const savedCallback = React.useRef();
+
+//   React.useEffect(() => {
+//     savedCallback.current = callback;
+//   }, [callback]);
+
+//   React.useEffect(() => {
+//     function tick() {
+//       savedCallback?.current();
+//     }
+//     if (delay !== null) {
+//       let id = setInterval(tick, delay);
+//       return () => clearInterval(id);
+//     }
+//   }, [delay]);
+// };
+
+function Pacman({ direction, mouthAngle, color }: { direction: number, mouthAngle: number, color: string }) {
+
+  const pacmanPath = (angle: number) => {
+    const angle_rad = angle / 180 * Math.PI;
+    const radius = 8;
+    const x = radius * Math.cos(angle_rad / 2);
+    const y = radius * Math.sin(angle_rad / 2);
+    return `M 0,0 L ${x},${-y} A ${radius},${radius} 0 1 0 ${x},${y} Z`;
+  }
+
+  return (
+    <g transform={ `rotate(${direction})` }
+      // style={{
+        // transform: `rotate(${direction})`
+      // }}
+      // animate={{
+        // rotate: direction
+      // }}
+      // transition={{ type: "spring", stiffness: 100 }}
+      className={color}>
+      <path
+        d={pacmanPath(mouthAngle)}
+        stroke="black"
+        strokeWidth={0.2}
+      />
+      <motion.circle cx={2.7} cy={direction < 160 ? -4.5 : 4.5} r={1.5}
+        className={`eye`}
+        stroke="black"
+        fill="yellow"
+        strokeWidth={0.2}
+      />
+    </g>)
+}
+
+function Bot({ position, color, say, width, turnsAgo }: { position: Pos, color: string, say: string, width: number, turnsAgo: number }) {
   const leftSide = position[0] < width / 2;
   const inHomezone = () => {
     switch (color) {
@@ -251,6 +332,24 @@ function Bot({ position, color, width }: { position: Pos, color: string, width: 
         return !leftSide;
     }
   }
+  const [direction, setDirection] = useState(leftSide ? 0 : 180);
+  const oldPosition = usePrevious(position);
+
+  // const [mouthAngleTL, setMouthAngleTL] = useState(0);
+  // useInterval(() => setMouthAngleTL(mouthAngleTL + 0.08), 10);
+
+  const mouthAngle = 50; // Math.abs(50 * Math.sin(mouthAngleTL));
+
+  useEffect(() => {
+    if (oldPosition) {
+      const dx = position[0] - oldPosition[0];
+      const dy = position[1] - oldPosition[1];
+      if (dx < 0) setDirection(180);
+      else if (dy < 0) setDirection(270);
+      else if (dx > 0) setDirection(0);
+      else if (dy > 0) setDirection(90);
+    }
+  }, [oldPosition]);
 
   useEffect(() => {
     anime.timeline()
@@ -269,27 +368,121 @@ function Bot({ position, color, width }: { position: Pos, color: string, width: 
   }, []);
 
   return (
-    <use transform={`translate(${(position[0]) * cellSize}, ${(position[1]) * cellSize}) scale(3)`} href={inHomezone() ? `#ghost` : `#pacman`} className={color} />
+    <motion.g
+      style={{
+        transform: `translateX(${(position[0] + 0.5) * cellSize}) translateY(${(position[0] + 0.5) * cellSize}) scale(${cellSize / 16})`,
+        zIndex: 50 - turnsAgo
+      }}
+      animate={{
+        x: (position[0] + 0.5) * cellSize,
+        y: (position[1] + 0.5) * cellSize,
+        scale: cellSize / 16
+      }}
+      transition={{ duration: 0.1 }}
+    >
+      {
+        inHomezone() ? (
+          <g
+            id="ghost"
+            className={`${color} ghost`}
+          >
+
+{/* Round path: // M -8 0 C -8 -4.4 -4.4 -8 0 -8 C 4.4 -8 8 -4.4 8 0 L 8 8 C 8 9 6.6667 5.6 6 5.6 S 4.6667 8.19 4 8.19 S 2.6667 5.6 2 5.6 S 0.6667 8.19 0 8.19 S -1.3333 5.6 -2 5.6 S -3.3333 8.19 -4 8.19 S -5.3333 5.6 -6 5.6 S -8 9 -8 8 C -8 5.3333 -8 2.6667 -8 0 Z  */}
+{/* Straight path: // M -8 0 C -8 -4.4 -4.4 -8 0 -8 C 4.4 -8 8 -4.4 8 0 L 8 8 L 6 5.6 L 4 8 L 2 5.6 L 0 8 L -2 5.6 L -4 8 L -6 5.6 L -8 8 L -8 0 Z */}
+
+            <path d="M -8 0 C -8 -4.4 -4.4 -8 0 -8 C 4.4 -8 8 -4.4 8 0 L 8 8 C 8 9 6.6667 5.6 6 5.6 S 4.6667 8.19 4 8.19 S 2.6667 5.6 2 5.6 S 0.6667 8.19 0 8.19 S -1.3333 5.6 -2 5.6 S -3.3333 8.19 -4 8.19 S -5.3333 5.6 -6 5.6 S -8 9 -8 8 C -8 5.3333 -8 2.6667 -8 0 Z"
+
+
+              stroke="black"
+              strokeWidth={0.2}
+              opacity={0.9}
+            ></path>
+            <path d="M -3.2 1.1 C -2.2 1.1 -1.4 0.1 -1.4 -1.2 C -1.4 -2.5 -2.2 -3.6 -3.2 -3.6 C -4.2 -3.6 -5.1 -2.5 -5.1 -1.2 C -5.1 0.1 -4.2 1.1 -3.2 1.1 Z
+M 1.8 1.1 C 2.8 1.1 3.6 0.1 3.6 -1.2 C 3.6 -2.5 2.8 -3.6 1.8 -3.6 C 0.8 -3.6 -0 -2.5 -0 -1.2 C -0 0.1 0.8 1.1 1.8 1.1 Z"
+              stroke="black"
+              strokeWidth={0.2}
+              fill="white"
+            ></path>
+            <path d="M -3.5 0 C -3.1 0 -2.8 -0.4 -2.8 -0.9 C -2.8 -1.5 -3.1 -1.9 -3.5 -1.9 C -3.9 -1.9 -4.2 -1.5 -4.2 -0.9 C -4.2 -0.4 -3.9 0 -3.5 0 Z
+M 1.5 0 C 1.9 0 2.2 -0.4 2.2 -0.9 C 2.2 -1.5 1.9 -1.9 1.5 -1.9 C 1.1 -1.9 0.8 -1.5 0.8 -0.9 C 0.8 -0.4 1.1 0 1.5 0 Z"
+              stroke="black"
+              strokeWidth={0.2}
+              fill="black"
+            >
+            </path>
+          </g>
+        ) : (
+          <Pacman direction={direction} mouthAngle={mouthAngle} color={`${color} pacman`}></Pacman>
+        )
+      }
+      <text y="-10" className="sayBg">{say}</text>
+      <text y="-10" className="say">{say}</text>
+    </motion.g>
   )
 }
 
+function Walls({ shape, walls }: { shape: Pos, walls: Pos[] }) {
+  const clusters = useMemo(() => findClusters(shape, walls), [shape, walls]);
+  const [width, height] = shape;
 
-function Maze({ game_uuid, shape, walls, food, a, b, x, y, whowins, gameover }:
+  return (
+    <g id="maze">
+      <line x1={(width) * cellSize / 2} y1={0.3 * cellSize}
+            x2={width * cellSize / 2} y2={(height - 0.3) * cellSize} className="middleLine blackLine" />
+      <line x1={(width - 0.1)  * cellSize / 2} y1={0.3 * cellSize}
+            x2={(width - 0.1) * cellSize / 2} y2={(height - 0.3) * cellSize} className="middleLine blueLine" />
+      <line x1={(width + 0.1)  * cellSize / 2} y1={0.3 * cellSize}
+            x2={(width + 0.1) * cellSize / 2} y2={(height - 0.3) * cellSize} className="middleLine redLine" />
+    {walls.map(([x, y], index) => (
+      <rect
+        key={`${x},${y}`}
+        x={x * cellSize}
+        y={y * cellSize}
+        width={cellSize}
+        height={cellSize}
+        opacity="0"
+        // fill="lightblue"
+        stroke="lightgrey"
+      />
+    ))}
+    {clusters.map((cluster, index) => (
+      <path
+        className="maze"
+        key={`${cluster[0]},${cluster[1]}-${cluster.length}`}
+        d={createPath(cluster)}
+        // stroke="lightblue"
+        // stroke={ dark_mode ? "url(#grad)" : "black" }
+        stroke="url(#grad)"
+        strokeWidth="2"
+        //fill={ dark_mode ? "#ffa" : "black" }
+        fill="black"
+        strokeLinecap="round"
+        strokeLinejoin="bevel"
+      />
+    ))}
+  </g>
+  );
+}
+
+
+function Maze({ game_uuid, shape, walls, food, bots, team_names, say, whowins, gameover, round, turn }:
   {
     game_uuid: string,
     shape: Pos,
     walls: Pos[],
     food: Pos[],
-    a: Pos,
-    b: Pos,
-    x: Pos,
-    y: Pos,
+    bots: [Pos, Pos, Pos, Pos],
+    team_names: [string, string],
+    say: [string, string, string, string],
     whowins: number | null,
-    gameover: boolean
+    gameover: boolean,
+    round: number,
+    turn: number,
   }
 ) {
   const [width, height] = shape;
-  const clusters = findClusters(shape, walls);
+  const [a, x, b, y] = bots;
+  const [sayA, sayX, sayB, sayY] = say;
 
   useEffect(() => {
     if (game_uuid) {
@@ -311,6 +504,12 @@ function Maze({ game_uuid, shape, walls, food, a, b, x, y, whowins, gameover }:
           duration: 2000
         }, 2000)
         .add({
+          targets: '#mazebox #maze path',
+          strokeWidth: 0,
+          easing: 'linear',
+          duration: 2000
+        }, 4000)
+        .add({
           targets: '#mazebox .foodblue',
           opacity: [0, 1],
           easing: 'linear',
@@ -330,6 +529,12 @@ function Maze({ game_uuid, shape, walls, food, a, b, x, y, whowins, gameover }:
         }, 3500)
         .add({
           targets: '#mazebox .red',
+          opacity: [0, 1],
+          easing: 'linear',
+          duration: 2000,
+        }, 3500)
+        .add({
+          targets: '#mazebox .middleLine',
           opacity: [0, 1],
           easing: 'linear',
           duration: 2000,
@@ -371,12 +576,13 @@ function Maze({ game_uuid, shape, walls, food, a, b, x, y, whowins, gameover }:
 
 
   return (
-    <div id="mazebox">
+    <div id="mazebox" className="object-fill">
       <svg
-        width={width * cellSize}
-        height={height * cellSize}
+        // width={width * cellSize}
+        // height={height * cellSize}
         viewBox={`0 0 ${width * cellSize} ${height * cellSize}`}
         xmlns="http://www.w3.org/2000/svg"
+        style={{ overflow: "visible" }}
       >
         <style type="text/css">{`
         line {
@@ -385,11 +591,11 @@ function Maze({ game_uuid, shape, walls, food, a, b, x, y, whowins, gameover }:
             stroke-width: 3;
         }
         .foodblue {
-            stroke: black;
+            // stroke: black;
             fill: rgb(94, 158, 217);
         }
         .foodred {
-            stroke: black;
+            // stroke: black;
             fill: rgb(235, 90, 90);
         }
         .blue {
@@ -397,6 +603,28 @@ function Maze({ game_uuid, shape, walls, food, a, b, x, y, whowins, gameover }:
         }
         .red {
             fill: rgb(235, 90, 90);
+        }
+        .blueLine {
+            stroke: rgb(94, 158, 217);
+        }
+        .redLine {
+            stroke: rgb(235, 90, 90);
+        }
+        .sayBg {
+          stroke-width: 1.7px;
+          stroke: white;
+          font-size: 7px;
+          text-anchor: middle;
+          dominant-baseline: middle;
+          z-index: 90;
+        }
+        .say {
+          // stroke-width: 0.2px;
+          // stroke: white;
+          font-size: 7px;
+          text-anchor: middle;
+          dominant-baseline: middle;
+          z-index: 100;
         }
 
         .gameover {
@@ -416,101 +644,37 @@ function Maze({ game_uuid, shape, walls, food, a, b, x, y, whowins, gameover }:
             <stop stopColor="red" offset="50%" />
             <stop stopColor="red" offset="100%" />
           </linearGradient>
-          <g id="pacman">
-            <path d="M 9.98 7.73
-        A 4.38 4.38 0 1 1 9.98 3.8
-        L 6.05 5.8
-        Z"
-            />
-          </g>
-
-          <g id="ghost">
-            <path d="M 2 6
-        C 2 3.79 3.8 2 6 2
-        C 8.21 2 10 3.8 10 6
-        L 10 10
-        L 9.01 8.81
-        L 8.01 10
-        L 7 8.81
-        L 6.01 10
-        L 5.01 8.81
-        L 4 10
-        L 3 8.81
-        L 2 10
-        L 2 6
-        Z
-        M 4.39 6.54
-        C 4.9 6.54 5.31 6.03 5.31 5.38
-        C 5.31 4.74 4.9 4.22 4.39 4.22
-        C 3.88 4.22 3.47 4.74 3.47 5.38
-        C 3.47 6.03 3.88 6.54 4.39 6.54
-        Z
-        M 6.9 6.54
-        C 7.41 6.54 7.82 6.03 7.82 5.38
-        C 7.82 4.74 7.41 4.22 6.9 4.22
-        C 6.39 4.22 5.98 4.74 5.98 5.38
-        C 5.98 6.03 6.39 6.54 6.9 6.54
-        Z
-        M 4.25 6
-        C 4.44 6 4.6 5.79 4.6 5.53
-        C 4.6 5.27 4.44 5.05 4.25 5.05
-        C 4.05 5.05 3.89 5.27 3.89 5.53
-        C 3.89 5.79 4.05 6 4.25 6
-        Z
-        M 6.76 6
-        C 6.95 6 7.11 5.79 7.11 5.53
-        C 7.11 5.27 6.95 5.05 6.76 5.05
-        C 6.56 5.05 6.4 5.27 6.4 5.53
-        C 6.4 5.79 6.56 6 6.76 6
-        Z"></path>
-          </g>
-
         </defs>
 
-        <g id="maze">
-          {walls.map(([x, y], index) => (
-            <rect
-              key={`${x},${y}`}
-              x={x * cellSize}
-              y={y * cellSize}
-              width={cellSize}
-              height={cellSize}
-              opacity="0"
-              // fill="lightblue"
-              stroke="lightgrey"
-            />
+        <Walls shape={shape} walls={walls}></Walls>
+        <AnimatePresence>
+          {food.map(([x, y], index) => (
+            <Food key={`${x},${y}`} position={[x, y]} color={x < width / 2 ? "foodblue" : "foodred"}></Food>
           ))}
-          {clusters.map((cluster, index) => (
-            <path
-              className="maze"
-              key={`${cluster[0]},${cluster[1]}-${cluster.length}`}
-              d={createPath(cluster)}
-              // stroke="lightblue"
-              stroke="url(#grad)"
-              strokeWidth="2"
-              fill="#ffa"
-              strokeLinecap="round"
-              strokeLinejoin="bevel"
-            />
-          ))}
-        </g>
-        {food.map(([x, y], index) => (
-          <circle key={index} cx={(0.5 + x) * cellSize} cy={(0.5 + y) * cellSize} r={cellSize / 5} className={x < width / 2 ? "foodblue" : "foodred"}></circle>
-        ))}
+        </AnimatePresence>
 
-        <Bot position={a} key="botA" color="blue" width={width}></Bot>
-        <Bot position={b} key="botB" color="blue" width={width}></Bot>
-        <Bot position={x} key="botX" color="red" width={width}></Bot>
-        <Bot position={y} key="botY" color="red" width={width}></Bot>
+          <Bot position={a} key="botA" color="blue" say={sayA} width={width} turnsAgo={turn}></Bot>
+          <Bot position={x} key="botX" color="red" say={sayX} width={width} turnsAgo={(turn + 3) % 4}></Bot>
+          <Bot position={b} key="botB" color="blue" say={sayB} width={width} turnsAgo={(turn + 2) % 4}></Bot>
+          <Bot position={y} key="botY" color="red" say={sayY} width={width} turnsAgo={(turn + 1) % 4}></Bot>
 
         {
-          gameover ? (<text fontSize="100" className="gameover"
-            x="50%" y="50%"
+          gameover ? (<>
+          <text fontSize="100" className="gameover"
+            x="50%" y="25%"
             dominantBaseline="middle"
             textAnchor="middle"
           >
             GAME OVER
-          </text>) : null
+          </text>
+          <text fontSize="100" className="gameover"
+            x="50%" y="75%"
+            dominantBaseline="middle"
+            textAnchor="middle"
+          >
+            { whowins == 2 ? "DRAW" : `${team_names[whowins]} wins!` }
+          </text>
+          </>) : null
         }
 
       </svg>

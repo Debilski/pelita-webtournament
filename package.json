@@ -4,12 +4,16 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev-remote": "next dev -H 0.0.0.0 -p 3000",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
+    "@vercel/nft": "^0.27.3",
     "animejs": "^3.2.2",
+    "framer-motion": "^11.3.17",
+    "http-proxy-middleware": "^3.0.0",
     "jszmq": "^0.1.2",
     "next": "^14.2.5",
     "react": "^18",

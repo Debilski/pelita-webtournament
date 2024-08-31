@@ -1,9 +1,9 @@
 "use client"
 
 import React, {
-  ReactNode,
+  Reducer,
   useEffect,
-  useRef
+  useReducer
 } from "react";
 
 
@@ -11,130 +11,207 @@ import Maze from "./maze";
 import ZMQReceiver from "./zmqreceiver";
 import TypewriterText from "./typewritertext";
 import { GameState } from "./zmqreceiver";
+import anime from "animejs";
 
-interface GameStats {
-  points: [number, number];
-  errors: [number, number];
-  kills: [number, number, number, number];
-  deaths: [number, number, number, number];
-  time: [number, number];
+type PelitaState = "initial" | "movie" | "intro" | "match" | "faulted";
+type PelitaEvent = "start-movie" | "start-intro" | "game-playing" | "clear-page" | "fail";
+
+const MAX_LINES = 20;
+
+const reducer: Reducer<PelitaState, PelitaEvent> = (state, event) => {
+  switch (state) {
+    case "initial":
+      if (event === "start-movie") return "movie";
+      break;
+    case "movie":
+      if (event === "start-intro") return "intro";
+      break;
+    case "intro":
+      if (event === "game-playing") return "match";
+      if (event === "clear-page") return "intro";
+      break;
+    case "match":
+      if (event === "game-playing") return "match";
+      if (event === "clear-page") return "intro";
+      break;
+  }
+  return state;
+};
+
+function PelitaMain({ gameState }: { gameState: GameState }) {
+  const [team1, team2] = gameState.team_names;
+
+  return <div id="main">
+    <h2 className="flex flex-row text-lg p-2">
+      <span className="basis-1/2 text-right w-64 blue-bot"><b>{team1}</b> {gameState.game_stats.score[0]}</span>
+      <span className="basis-1 px-2">:</span>
+      <span className="basis-1/2 text-left w-64 red-bot">{gameState.game_stats.score[1]} <b>{team2}</b></span>
+    </h2>
+    <div className="flex flex-row text-xs">
+      <div className="basis-1/2 w-64 px-2">Errors: {gameState.game_stats.num_errors[0]}, Kills: {gameState.game_stats.kills[0] + gameState.game_stats.kills[2]}, Deaths: {gameState.game_stats.deaths[0] + gameState.game_stats.deaths[2]}, Time: {gameState.game_stats.team_time[0].toFixed(2)} </div>
+      <div className="basis-1/2 text-right w-64 px-2">Errors: {gameState.game_stats.num_errors[1]}, Kills: {gameState.game_stats.kills[1] + gameState.game_stats.kills[3]}, Deaths: {gameState.game_stats.deaths[1] + gameState.game_stats.deaths[3]}, Time: {gameState.game_stats.team_time[1].toFixed(2)} </div>
+    </div>
+
+    <Maze
+      key={gameState.game_uuid}
+      game_uuid={gameState.game_uuid}
+      shape={gameState.shape}
+      walls={gameState.walls}
+      food={gameState.food}
+      bots={gameState.bots}
+      team_names={gameState.team_names}
+      say={gameState.say}
+      whowins={gameState.whowins}
+      gameover={gameState.gameover}
+      round={gameState.round}
+      turn={gameState.turn}
+    >
+    </Maze>
+
+    <div className="flex flex-row text-xs text-slate-600">
+      <div className="basis-1/2 w-64 px-2">ᗧ Pelita Tournament, ASPP 2024 Ηράκλειο</div>
+      <div className="basis-1/2 text-right w-64 px-2">Round {gameState.round ?? "-"}/{gameState.max_rounds}</div>
+    </div>
+
+  </div>
 }
 
+
 function Pelita() {
+  const initialState: PelitaState = "initial";
+  const [state, dispatch] = useReducer(reducer, initialState);
+
   const [showPre, setShowPre] = React.useState(true);
   const [showMain, setShowMain] = React.useState(true);
-  const [getText, setText] = React.useState<string[]>([]);
+  const [typewriterText, setTypewriterText] = React.useState<string[]>([]);
 
-  const [gameUUID, setGameUUID] = React.useState("");
-  const [shape, setShape] = React.useState<[number, number]>([0, 0]);
-  const [walls, setWalls] = React.useState<[number, number][]>([]);
-  const [food, setFood] = React.useState<[number, number][]>([]);
-  const [bots, setBots] = React.useState<[number, number][]>([[0, 0], [0, 0], [0, 0], [0, 0]]);
+  const [gameState, setGameState] = React.useState<GameState>();
 
-  const [team1, setTeam1] = React.useState("");
-  const [team2, setTeam2] = React.useState("");
+  const bg_color = ((state) => {
+    switch (state) {
+      case "initial":
+      case "movie":
+      case "intro":
+        return "#000"
 
-  const [stats, setStats] = React.useState<GameStats | null>(null);
-  const [whoWins, setWhoWins] = React.useState<number | null>(null);
-  const [gameOver, setGameOver] = React.useState<boolean>(false);
+      case "match":
+      default:
+        return "#fff";
+    }
+
+  })(state);
+
+
+  const crt = ((state) => {
+    switch (state) {
+      case "initial":
+      case "movie":
+      case "intro":
+        return "crt"
+
+      case "match":
+      default:
+        return "";
+    }
+
+  })(state);
+
+
+  useEffect(() => {
+    anime.timeline()
+      .add({
+        targets: 'body',
+        background: bg_color,
+        easing: 'linear',
+        duration: 2000,
+      }, 3000)
+  }, [bg_color]);
 
   const flip = () => {
     //setShowMain(!showMain);
     //setShowPre(!showPre);
   };
 
-  const updateGameState = (gameState: { '__data__': GameState }) => {
-    if (gameState['__data__']) {
-      // if (gameUUID != gameState['__data__']['game_uuid']) {
-      setGameUUID((oldUUID) => {
-        if (oldUUID != gameState['__data__']['game_uuid']) {
-          console.log("UUID changed", gameState['__data__']['game_uuid'], oldUUID);
-          setShape(gameState['__data__']['shape'])
-          setWalls(gameState['__data__']['walls']);
-        }
-        return gameState['__data__']['game_uuid'];
-      })
-      // }
-      setFood(gameState['__data__']['food']);
-      setBots(gameState['__data__']['bots']);
-      setTeam1(gameState['__data__']['team_names'][0]);
-      setTeam2(gameState['__data__']['team_names'][1]);
-      setStats(
-        {
-          "deaths": gameState['__data__']['deaths'],
-          "kills": gameState['__data__']['kills'],
-          "errors": gameState['__data__']['num_errors'],
-          "points": gameState['__data__']['score'],
-          "time": gameState['__data__']['team_time'],
-        }
-      );
-      setWhoWins(gameState['__data__']['whowins']);
-      setGameOver(gameState['__data__']['gameover']);
-    }
+  const updateGameState = (gameState: GameState) => {
+    dispatch("game-playing");
+    setGameState((oldState) => {
+      if (oldState?.game_uuid === gameState.game_uuid) {
+        // we keep the walls array so that the effects are not re-run
+        // TODO: Maybe the effect should depend on only the game_uuid having changed?
+        const newState = {
+          ...gameState,
+          "walls": oldState.walls,
+        };
+        return newState;
+      }
+      return gameState;
+    });
   }
 
   const updateMessage = (msg: string) => {
-    setText(oldText => [...oldText, msg]);
+    let split_str = msg.split(/\r?\n/);
+    setTypewriterText(oldText => [...oldText, ...split_str]);
   }
 
   const clearPage = () => {
-    setText([]);
+    dispatch("clear-page");
+    setTypewriterText([]);
   }
 
-  const a = bots[0];
-  const b = bots[2];
-  const x = bots[1];
-  const y = bots[3];
+  const handleClick = async () => {
+    switch (state) {
+      case "initial":
+        dispatch("start-movie");
+        break;
+      case "movie":
+        dispatch("start-intro");
+        break
+      default:
+        break;
+    }
+  };
+
+  function showIntro() {
+    return <TypewriterText text={typewriterText} lines={MAX_LINES}></TypewriterText>;
+  }
+
+  function inner() {
+
+    if (state == "initial") {
+      return <button onClick={handleClick}>Start Movie</button>;
+    } else if (state == "movie") {
+      return <video autoPlay controls onEnded={handleClick}>
+        <source src={"Pelita Supercut ASPP Heraklion 2024.mp4"} type="video/mp4" />
+      </video>;
+    } else if (state == "intro" || state == "match") {
+
+      return (
+        <div>
+          <h1 className="fixed top-0 left-0 z-20 w-full px-24 py-4 text-xl">
+            ᗧ Pelita Tournament 2024
+          </h1>
+
+          {state === "intro" ? showIntro() : null}
+
+          {state === "match" ?
+            <PelitaMain gameState={gameState}></PelitaMain>
+            : null
+          }
+
+          <ZMQReceiver url='ws://localhost:5556' sendGameState={updateGameState} sendMessage={updateMessage} sendClearPage={clearPage}></ZMQReceiver>
+        </div>
+      );
+    }
+  };
 
   return (
-    <div>
-      <h1 className="fixed top-0 left-0 z-20 w-full p-4 bg-white border-t border-gray-200 shadow md:flex md:items-center md:justify-between md:p-6 dark:bg-gray-800 dark:border-gray-600">
-        ᗧ Pelita Tournament 2024
-      </h1>
+  <main className={`min-h-screen flex-col items-center justify-between px-24 py-12 ${crt}`}>
+    <div className="z-10 w-full max-w-screen items-center justify-between font-mono text-sm">
 
-      {showPre ?
-        getText.map((t, i) => (<TypewriterText key={i} text={t}></TypewriterText>))
-        : null}
-
-
-      {showMain ?
-        <div id="main">
-          {gameUUID ?
-            (<>
-              <h2 className="flex flex-row text-lg">
-              <span className="basis-1/2"><b>{team1}</b> ({stats.points[0]})</span>
-              <span className="basis-1/2 text-right"><b>{team2}</b> ({stats.points[1]})</span>
-              </h2>
-              <div className="flex flex-row">
-                <div className="basis-1/2">Errors: {stats.errors[0]}, Kills: {stats.kills[0] + stats.kills[2]}, Deaths: {stats.deaths[0] + stats.deaths[2]}, Time: {stats.time[0].toFixed(2)} </div>
-                <div className="basis-1/2 text-right">Errors: {stats.errors[1]}, Kills: {stats.kills[1] + stats.kills[3]}, Deaths: {stats.deaths[1] + stats.deaths[3]}, Time: {stats.time[1].toFixed(2)} </div>
-              </div>
-            </>)
-            : null}
-
-          <Maze
-            key={gameUUID}
-            game_uuid={gameUUID}
-            shape={shape}
-            walls={walls}
-            food={food}
-            a={a}
-            b={b}
-            x={x}
-            y={y}
-            whowins={whoWins}
-            gameover={gameOver}>
-          </Maze>
-          <p className='text-xs text-slate-600 text-right'>{gameUUID}</p>
-
-        </div>
-        : null
-      }
-
-      <ZMQReceiver url='ws://127.0.0.1:5556' sendGameState={updateGameState} sendMessage={updateMessage} sendClearPage={clearPage}></ZMQReceiver>
-
+    { inner() }
 
     </div>
+  </main>
   );
 };
 export default Pelita;

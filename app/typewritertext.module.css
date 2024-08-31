@@ -1,6 +1,6 @@
 
 .text_animation {
-  display: none;
+  /* display: none; */
   position: relative;
   font-size: 20px;
   letter-spacing: 1px;
@@ -9,16 +9,20 @@
 
 .text_animation .letter {
   display: inline-block;
-  opacity: 0;
+  /* opacity: 0; */
+  /* color: white; */
 }
 
 .text_animation .cursor {
+  display: inline-block;
   position: absolute;
-  top: 0;
-  bottom: 0;
+  /* top: 0; */
+  /* bottom: 0; */
   width: 0.55em;
-  /* height: 1em; */
+  height: 1em;
   /* background: #f5f5f5; */
-  background: black;
+  /* color: white; */
+  /* background: #ffffff; */
+  /* background: green; */
   z-index: 1;
 }
