@@ -1,5 +1,6 @@
 'use client';
 
+import { md5 } from 'js-md5';
 import { useEffect, useState } from 'react';
 import React from 'react';
 
@@ -8,16 +9,22 @@ import { ColoredDot } from '@/app/utils/utils';
 
 import { Team, Match, WinsLosses } from './models';
 
-const HOST = "https://pelita.itbportal.biologie.hu-berlin.de/pyapi"
+const HOST = 'https://pelita.itbportal.biologie.hu-berlin.de/pyapi';
+
+interface Replay {
+  slug1: string;
+  slug2: string;
+  uuid: string;
+}
 
 function Matches({
   team,
   opponent,
-  setReplayUUID,
+  setReplay,
 }: {
   team: string;
   opponent: string;
-  setReplayUUID: (uuid: string) => void;
+  setReplay: (replay: Replay | null) => void;
 }) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(false);
@@ -31,6 +38,7 @@ function Matches({
   }, []);
 
   function DisplayMatch({ match }: { match: Match }) {
+    console.log(match);
     let color = 'red';
     switch (match.outcome) {
       case 0:
@@ -56,7 +64,17 @@ function Matches({
   return (
     <>
       {matches.map(m => (
-        <span key={m.game_uuid} onClick={() => { setReplayUUID(m.game_uuid); }}>
+        <span
+          className="cursor-pointer"
+          key={m.game_uuid}
+          onClick={() => {
+            setReplay({
+              slug1: m.team_color === 1 ? m.team : m.opponent,
+              slug2: m.team_color === 1 ? m.opponent : m.team,
+              uuid: m.game_uuid,
+            });
+          }}
+        >
           <DisplayMatch match={m}></DisplayMatch>
         </span>
       ))}
@@ -70,7 +88,9 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
   const [matches, setMatches] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(false);
 
-  const [replayUUID, setReplayUUID] = useState<string | null>(null);
+  const [colorMode, setColorMode] = useState(false);
+
+  const [replay, setReplay] = useState<Replay | null>(null);
 
   async function toggleTeam(slug: string) {
     if (expandTeam === slug) {
@@ -110,6 +130,11 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
     '# Fatal Errors',
   ];
 
+  function colorFromString(str: string) {
+    if (!colorMode) return;
+    return `#${md5(str).slice(0, 6)}`;
+  }
+
   return (
     <>
       {/* <div className="w-sm">
@@ -119,7 +144,17 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
         ></PelitaReplay>
       </div> */}
 
-      <h1>CI stats and replays</h1>
+      <h1 className="text-center italic">CI stats and replays</h1>
+
+      <div className="basis-1/2 text-right">
+        <span
+          onClick={() => {
+            setColorMode(old => !old);
+          }}
+        >
+          {colorMode ? 'Color mode' : 'Classic mode'}
+        </span>
+      </div>
 
       <div className="relative overflow-x-auto shadow-xs rounded border">
         <table className="w-full text-sm text-left rtl:text-right">
@@ -133,89 +168,128 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
             </tr>
           </thead>
           <tbody>
-            {teams.toSorted((a, b) => a.score - b.score).toReversed().map(team => {
-              const team_name = `${team.slug} (${team.display_name})`;
-              const padding =
-                expandTeam === team.slug && !loading && winsLosses[team.slug]
-                  ? 'pt-4 py-0.5'
-                  : 'py-4';
+            {teams
+              .toSorted((a, b) => a.score - b.score)
+              .toReversed()
+              .map(team => {
+                const team_name = (
+                  <>
+                    {team.slug}{' '}
+                    <span style={{ color: colorFromString(team.slug) }}>({team.display_name})</span>
+                  </>
+                );
+                const padding =
+                  expandTeam === team.slug && !loading && winsLosses[team.slug]
+                    ? 'pt-4 py-0.5'
+                    : 'py-4';
 
-              return (
-                <React.Fragment key={team.id}>
-                  <tr className="border-t hover:bg-amber-50" onClick={() => toggleTeam(team.slug)}>
-                    <td className={`px-6 ${padding}`}>{team_name}</td>
-                    <td className={`px-6 ${padding}`}>{team.wins + team.draws + team.losses}</td>
-                    <td className={`px-6 ${padding}`}>{team.wins}</td>
-                    <td className={`px-6 ${padding}`}>{team.draws}</td>
-                    <td className={`px-6 ${padding}`}>{team.losses}</td>
-                    <td className={`px-6 ${padding}`}>{team.score < 0 ? "" : <>&nbsp;</>}{team.score.toFixed(2)}</td>
-                    <td className={`px-6 ${padding}`}>{team.mu.toFixed(2)}</td>
-                    <td className={`px-6 ${padding}`}>{team.sigma.toFixed(2)}</td>
-                    <td className={`px-6 ${padding}`}>{team.num_timeouts}</td>
-                    <td className={`px-6 ${padding}`}>{team.num_fatals}</td>
-                  </tr>
-
-                  {expandTeam === team.slug && loading && !winsLosses[team.slug] && (
-                    <tr>
-                      <td colSpan={10}>
-                        <p>Loading...</p>
+                return (
+                  <React.Fragment key={team.id}>
+                    <tr
+                      className="border-t hover:bg-amber-50 dark:hover:bg-gray-700"
+                      onClick={() => toggleTeam(team.slug)}
+                    >
+                      <td className={`px-6 ${padding}`}>{team_name}</td>
+                      <td className={`px-6 ${padding}`}>{team.wins + team.draws + team.losses}</td>
+                      <td className={`px-6 ${padding}`}>{team.wins}</td>
+                      <td className={`px-6 ${padding}`}>{team.draws}</td>
+                      <td className={`px-6 ${padding}`}>{team.losses}</td>
+                      <td className={`px-6 ${padding}`}>
+                        {team.score < 0 ? '' : <>&nbsp;</>}
+                        {team.score.toFixed(2)}
                       </td>
+                      <td className={`px-6 ${padding}`}>{team.mu.toFixed(2)}</td>
+                      <td className={`px-6 ${padding}`}>{team.sigma.toFixed(2)}</td>
+                      <td className={`px-6 ${padding}`}>{team.num_timeouts}</td>
+                      <td className={`px-6 ${padding}`}>{team.num_fatals}</td>
                     </tr>
-                  )}
 
-                  {expandTeam === team.slug && !loading && winsLosses[team.slug] && (
-                    <>
-                      {winsLosses[team.slug].map((a, idx) => {
-                        const total = a.draws + a.wins + a.losses;
-                        const score = (a.wins - a.losses) / total;
-                        const padding =
-                          idx === winsLosses[team.slug].length - 1 ? 'pb-4 py-0.5' : 'py-0.5';
-                        return (
-                          <tr key={a.opponent} className='hover:bg-amber-50 dark:hover:bg-gray-700'>
-                            <td className={`px-6 ${padding}`}>ᗧ {a.opponent}</td>
-                            <td className={`px-6 ${padding}`}>{total}</td>
-                            <td className={`px-6 ${padding}`}>{a.wins}</td>
-                            <td className={`px-6 ${padding}`}>{a.draws}</td>
-                            <td className={`px-6 ${padding}`}>{a.losses}</td>
-                            <td className={`px-6 ${padding}`}>{score < 0 ? "" : <>&nbsp;</>}{score.toFixed(2)}</td>
-                            <td className={`px-6 ${padding}`} colSpan={4}>
-                              <Matches
-                                team={team.slug}
-                                opponent={a.opponent}
-                                setReplayUUID={uuid => setReplayUUID(uuid)}
-                              ></Matches>
-                            </td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                          </tr>
-                        );
-                      })}
-                    </>
-                  )}
-                </React.Fragment>
-              );
-            })}
+                    {expandTeam === team.slug && loading && !winsLosses[team.slug] && (
+                      <tr>
+                        <td colSpan={10}>
+                          <p>Loading...</p>
+                        </td>
+                      </tr>
+                    )}
+
+                    {expandTeam === team.slug && !loading && winsLosses[team.slug] && (
+                      <>
+                        {winsLosses[team.slug].map((a, idx) => {
+                          const total = a.draws + a.wins + a.losses;
+                          const score = (a.wins - a.losses) / total;
+                          const padding =
+                            idx === winsLosses[team.slug].length - 1 ? 'pb-4 py-0.5' : 'py-0.5';
+                          return (
+                            <tr
+                              key={a.opponent}
+                              className="hover:bg-amber-50 dark:hover:bg-gray-700"
+                            >
+                              <td className={`px-6 ${padding}`}>
+                                <span
+                                  style={{
+                                    color: colorFromString(a.opponent),
+                                  }}
+                                >
+                                  ᗧ
+                                </span>{' '}
+                                {a.opponent}
+                              </td>
+                              <td className={`px-6 ${padding}`}>{total}</td>
+                              <td className={`px-6 ${padding}`}>{a.wins}</td>
+                              <td className={`px-6 ${padding}`}>{a.draws}</td>
+                              <td className={`px-6 ${padding}`}>{a.losses}</td>
+                              <td className={`px-6 ${padding}`}>
+                                {score < 0 ? '' : <>&nbsp;</>}
+                                {score.toFixed(2)}
+                              </td>
+                              <td className={`px-6 ${padding}`} colSpan={4}>
+                                <Matches
+                                  team={team.slug}
+                                  opponent={a.opponent}
+                                  setReplay={uuid => setReplay(uuid)}
+                                ></Matches>
+                              </td>
+                              <td></td>
+                              <td></td>
+                              <td></td>
+                            </tr>
+                          );
+                        })}
+                      </>
+                    )}
+                  </React.Fragment>
+                );
+              })}
           </tbody>
         </table>
       </div>
 
-      {replayUUID && (
+      {replay && (
         <div
           className="fixed inset-0 bg-white/50 dark:bg-black/50"
           onClick={() => {
-            setReplayUUID(null);
+            setReplay(null);
           }}
         >
           <aside className="absolute flex justify-center items-center inset-0">
-            <div className=" border rounded bg-white dark:bg-gray-800 p-8 w-1/2" onClick={e => e.stopPropagation()}>
+            <div
+              className=" border rounded bg-white dark:bg-gray-800 p-8 w-1/2"
+              onClick={e => e.stopPropagation()}
+            >
               <PelitaReplay
-                src={`${HOST}/game_replay/${replayUUID}`}
+                src={`${HOST}/game_replay/${replay.uuid}`}
+                colorMap={
+                    colorMode ?
+                    {
+                        [replay.slug1]: `${colorFromString(replay.slug1)}`,
+                        [replay.slug2]: `${colorFromString(replay.slug2)}`,
+                } : undefined}
+                team_specs={[replay.slug1, replay.slug2]}
                 rawGameState={true}
                 startEnd={true}
                 hasQuit={true}
                 hasFF={true}
-                onQuit={() => setReplayUUID(null)}
+                onQuit={() => setReplay(null)}
               ></PelitaReplay>
             </div>
           </aside>

@@ -30,6 +30,7 @@ export interface Match {
     id: number;
     game_uuid: string;
     outcome: 0 | 1 | 2;
+    team_color: 1 | 2;
     team: string;
     opponent: string;
 }

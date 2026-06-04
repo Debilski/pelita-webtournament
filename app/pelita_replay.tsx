@@ -9,6 +9,7 @@ type ColorMap = Record<string, string>;
 
 export default function PelitaReplay({
   src,
+  team_specs,
   rawGameState = false,
   colorMap,
   preloadFrame,
@@ -18,6 +19,7 @@ export default function PelitaReplay({
   onQuit
 }: {
   src: string;
+  team_specs?: [string, string];
   rawGameState?: boolean;
   colorMap?: ColorMap;
   preloadFrame?: GameState;
@@ -95,7 +97,7 @@ export default function PelitaReplay({
     );
   }
 
-  const team_specs: [string, string] = gameData[0].team_specs;
+  team_specs ??= gameData[0].team_specs;
   if (team_specs[0] in colorMap) {
     colors[0] = colorMap[team_specs[0]];
   }
