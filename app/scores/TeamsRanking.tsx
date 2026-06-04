@@ -133,7 +133,7 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
             </tr>
           </thead>
           <tbody>
-            {teams.map(team => {
+            {teams.toSorted((a, b) => a.score - b.score).toReversed().map(team => {
               const team_name = `${team.slug} (${team.display_name})`;
               const padding =
                 expandTeam === team.slug && !loading && winsLosses[team.slug]
@@ -148,7 +148,7 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
                     <td className={`px-6 ${padding}`}>{team.wins}</td>
                     <td className={`px-6 ${padding}`}>{team.draws}</td>
                     <td className={`px-6 ${padding}`}>{team.losses}</td>
-                    <td className={`px-6 ${padding}`}>{team.score.toFixed(2)}</td>
+                    <td className={`px-6 ${padding}`}>{team.score < 0 ? "" : <>&nbsp;</>}{team.score.toFixed(2)}</td>
                     <td className={`px-6 ${padding}`}>{team.mu.toFixed(2)}</td>
                     <td className={`px-6 ${padding}`}>{team.sigma.toFixed(2)}</td>
                     <td className={`px-6 ${padding}`}>{team.num_timeouts}</td>
@@ -172,12 +172,12 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
                           idx === winsLosses[team.slug].length - 1 ? 'pb-4 py-0.5' : 'py-0.5';
                         return (
                           <tr key={a.opponent}>
-                            <td className={`px-6 ${padding}`}>- {a.opponent}</td>
+                            <td className={`px-6 ${padding}`}>ᗧ {a.opponent}</td>
                             <td className={`px-6 ${padding}`}>{total}</td>
                             <td className={`px-6 ${padding}`}>{a.wins}</td>
                             <td className={`px-6 ${padding}`}>{a.draws}</td>
                             <td className={`px-6 ${padding}`}>{a.losses}</td>
-                            <td className={`px-6 ${padding}`}>{score.toFixed(2)}</td>
+                            <td className={`px-6 ${padding}`}>{score < 0 ? "" : <>&nbsp;</>}{score.toFixed(2)}</td>
                             <td className={`px-6 ${padding}`} colSpan={4}>
                               <Matches
                                 team={team.slug}
