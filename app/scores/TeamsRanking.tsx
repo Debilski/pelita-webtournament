@@ -204,7 +204,6 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
         <div
           className="fixed inset-0 bg-white/50"
           onClick={() => {
-            console.log('xxx');
             setReplayUUID(null);
           }}
         >
