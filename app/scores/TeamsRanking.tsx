@@ -171,7 +171,7 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
                         const padding =
                           idx === winsLosses[team.slug].length - 1 ? 'pb-4 py-0.5' : 'py-0.5';
                         return (
-                          <tr key={a.opponent} className='hover:bg-amber-50'>
+                          <tr key={a.opponent} className='hover:bg-amber-50 dark:hover:bg-gray-700'>
                             <td className={`px-6 ${padding}`}>ᗧ {a.opponent}</td>
                             <td className={`px-6 ${padding}`}>{total}</td>
                             <td className={`px-6 ${padding}`}>{a.wins}</td>
@@ -202,13 +202,13 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
 
       {replayUUID && (
         <div
-          className="fixed inset-0 bg-white/50"
+          className="fixed inset-0 bg-white/50 dark:bg-black/50"
           onClick={() => {
             setReplayUUID(null);
           }}
         >
           <aside className="absolute flex justify-center items-center inset-0">
-            <div className=" border rounded bg-white p-8 w-1/2" onClick={e => e.stopPropagation()}>
+            <div className=" border rounded bg-white dark:bg-gray-800 p-8 w-1/2" onClick={e => e.stopPropagation()}>
               <PelitaReplay
                 src={`${HOST}/game_replay/${replayUUID}`}
                 rawGameState={true}
