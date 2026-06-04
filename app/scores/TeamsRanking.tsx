@@ -210,11 +210,13 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
         >
           <aside className="absolute flex justify-center items-center inset-0">
             <div className=" border rounded bg-white p-8 w-1/2" onClick={e => e.stopPropagation()}>
-              <span onClick={() => setReplayUUID(null)}>Quit</span>
               <PelitaReplay
                 src={`${HOST}/game_replay/${replayUUID}`}
                 rawGameState={true}
                 startEnd={true}
+                hasQuit={true}
+                hasFF={true}
+                onQuit={() => setReplayUUID(null)}
               ></PelitaReplay>
             </div>
           </aside>

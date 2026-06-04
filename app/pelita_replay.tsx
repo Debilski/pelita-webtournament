@@ -13,12 +13,18 @@ export default function PelitaReplay({
   colorMap,
   preloadFrame,
   startEnd = false,
+  hasQuit = false,
+  hasFF = false,
+  onQuit
 }: {
   src: string;
   rawGameState?: boolean;
   colorMap?: ColorMap;
   preloadFrame?: GameState;
   startEnd?: boolean;
+  hasQuit?: boolean;
+  hasFF?: boolean;
+  onQuit?: () => void
 }) {
   const [position, setPosition] = useState(0);
   const [started, setStarted] = useState(false);
@@ -67,6 +73,13 @@ export default function PelitaReplay({
     setPosition(s => Math.max(s - 1, 0));
   }
 
+  function fastForward() {
+    if (gameData.length === 0) return;
+
+    setStarted(false);
+    setPosition(s => Math.min(s + 1, gameData.length - 1));
+  }
+
   function step() {
     if (gameData.length === 0) return;
 
@@ -94,13 +107,26 @@ export default function PelitaReplay({
   const current = gameData[position];
   current.game_uuid ??= src;
 
+  const buttonCols = 4 + (hasFF ? 1 : 0) + (hasQuit ? 1 : 0);
+
+  console.log(current);
+
   return (
     <div className="">
       <PelitaMatch do_animate={false} footer="" colors={colors} gameState={current}></PelitaMatch>
 
-      <div className="flex flex-row gap-4 items-center justify-between">
+      <div className={`grid grid-cols-${4 + (hasFF ? 1 : 0) + (hasQuit ? 1 : 0)} gap-4 items-center justify-between`}>
+
+        {hasQuit && <button
+          className="bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-1 px-3 border border-blue-500 hover:border-transparent rounded disabled:border-white-500"
+          onClick={onQuit}
+        >
+          quit
+        </button>
+        }
+
         <button
-          className="basis-1/4 bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-1 px-3 border border-blue-500 hover:border-transparent rounded disabled:border-white-500"
+          className="bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-1 px-3 border border-blue-500 hover:border-transparent rounded disabled:border-white-500"
           onClick={() => {
             setPosition(0);
           }}
@@ -109,13 +135,13 @@ export default function PelitaReplay({
           rewind
         </button>
         <button
-          className="basis-1/4 bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-1 px-3 border border-blue-500 hover:border-transparent rounded"
+          className="bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-1 px-3 border border-blue-500 hover:border-transparent rounded"
           onClick={back}
         >
           back
         </button>
         <button
-          className="basis-1/4 bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-1 px-3 border border-blue-500 hover:border-transparent rounded"
+          className="bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-1 px-3 border border-blue-500 hover:border-transparent rounded"
           onClick={() => {
             setStarted(!started);
           }}
@@ -123,11 +149,22 @@ export default function PelitaReplay({
           {started ? `pause` : `play`}
         </button>
         <button
-          className="basis-1/4 bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-1 px-3 border border-blue-500 hover:border-transparent rounded"
+          className="bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-1 px-3 border border-blue-500 hover:border-transparent rounded"
           onClick={step}
         >
           step
         </button>
+
+        {hasFF && <button
+          className="bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-1 px-3 border border-blue-500 hover:border-transparent rounded"
+          onClick={() => {
+            setPosition(gameData.length - 1);
+          }}
+        >
+          forward
+        </button>
+        }
+
       </div>
     </div>
   );
