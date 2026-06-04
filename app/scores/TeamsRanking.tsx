@@ -142,7 +142,7 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
 
               return (
                 <React.Fragment key={team.id}>
-                  <tr className="border-t" onClick={() => toggleTeam(team.slug)}>
+                  <tr className="border-t hover:bg-amber-50" onClick={() => toggleTeam(team.slug)}>
                     <td className={`px-6 ${padding}`}>{team_name}</td>
                     <td className={`px-6 ${padding}`}>{team.wins + team.draws + team.losses}</td>
                     <td className={`px-6 ${padding}`}>{team.wins}</td>
@@ -171,7 +171,7 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
                         const padding =
                           idx === winsLosses[team.slug].length - 1 ? 'pb-4 py-0.5' : 'py-0.5';
                         return (
-                          <tr key={a.opponent}>
+                          <tr key={a.opponent} className='hover:bg-amber-50'>
                             <td className={`px-6 ${padding}`}>ᗧ {a.opponent}</td>
                             <td className={`px-6 ${padding}`}>{total}</td>
                             <td className={`px-6 ${padding}`}>{a.wins}</td>
