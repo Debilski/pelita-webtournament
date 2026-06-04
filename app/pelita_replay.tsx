@@ -3,18 +3,22 @@
 import { useEffect, useState } from 'react';
 
 import PelitaMatch from './pelita_match';
-import { GameState } from './pelita_types';
+import { convertGameStateL, GameState } from './pelita_types';
 
 type ColorMap = Record<string, string>;
 
 export default function PelitaReplay({
   src,
+  rawGameState = false,
   colorMap,
   preloadFrame,
+  startEnd = false,
 }: {
   src: string;
+  rawGameState?: boolean;
   colorMap?: ColorMap;
   preloadFrame?: GameState;
+  startEnd?: boolean;
 }) {
   const [position, setPosition] = useState(0);
   const [started, setStarted] = useState(false);
@@ -28,10 +32,14 @@ export default function PelitaReplay({
   useEffect(() => {
     void fetch(src)
       .then(r => r.json())
+      .then(r => (rawGameState ? convertGameStateL(r) : r))
       .then((content: GameState[]) => {
         setGameData(content);
+        if (startEnd) {
+          setPosition(content.length - 1);
+        }
       });
-  }, [src]);
+  }, [src, rawGameState]);
 
   useEffect(() => {
     const id = setTimeout(() => {

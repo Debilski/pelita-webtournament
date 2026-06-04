@@ -6,7 +6,7 @@ export function Dot({ blink = false }: { blink?: boolean }) {
 
 export function ColoredDot({ color }: { color: string }) {
   return (
-    <span className="colored-dot" style={{ color: color }}>
+    <span className="colored-dot text-2xl" style={{ color: color }}>
       ⚫&#xFE0E;
     </span>
   );
