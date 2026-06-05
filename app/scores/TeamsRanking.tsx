@@ -214,7 +214,11 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
 
                     {expandTeam === team.slug && !loading && winsLosses[team.slug] && (
                       <>
-                        {winsLosses[team.slug].map((a, idx) => {
+                        {winsLosses[team.slug]
+                        .toSorted((a, b) => (a.wins - a.losses) / (a.draws + a.wins + a.losses) - (b.wins - b.losses)/ (b.draws + b.wins + b.losses))
+                        .toSorted((a, b) => a.draws + a.wins + a.losses - b.draws - b.wins - b.losses)
+                        .toReversed()
+                        .map((a, idx) => {
                           const total = a.draws + a.wins + a.losses;
                           const score = (a.wins - a.losses) / total;
                           const padding =
