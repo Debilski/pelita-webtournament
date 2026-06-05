@@ -16,6 +16,7 @@ export default function PelitaReplay({
   startEnd = false,
   hasQuit = false,
   hasFF = false,
+  sublteGameOver = false,
   onQuit
 }: {
   src: string;
@@ -26,6 +27,7 @@ export default function PelitaReplay({
   startEnd?: boolean;
   hasQuit?: boolean;
   hasFF?: boolean;
+  sublteGameOver?: boolean;
   onQuit?: () => void
 }) {
   const [position, setPosition] = useState(0);
@@ -36,6 +38,8 @@ export default function PelitaReplay({
   const colors: [string, string] = ['rgb(94, 158, 217)', 'rgb(235, 90, 90)'];
 
   colorMap ??= {};
+
+  console.log(colorMap);
 
   useEffect(() => {
     void fetch(src)
@@ -115,7 +119,7 @@ export default function PelitaReplay({
 
   return (
     <div className="">
-      <PelitaMatch do_animate={false} footer="" colors={colors} gameState={current}></PelitaMatch>
+      <PelitaMatch do_animate={false} footer="" colors={colors} gameState={current} subtleGameOver={sublteGameOver}></PelitaMatch>
 
       <div className={`grid grid-cols-${4 + (hasFF ? 1 : 0) + (hasQuit ? 1 : 0)} gap-4 items-center justify-between`}>
 

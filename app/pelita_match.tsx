@@ -30,11 +30,13 @@ export default function PelitaMatch({
   colors = defaultColors,
   footer,
   do_animate = false,
+  subtleGameOver = false,
 }: {
   gameState: GameState;
   colors?: [string, string];
   footer: string;
   do_animate?: boolean;
+  subtleGameOver?: boolean;
 }) {
   let [colorBlue, colorRed] = colors;
   let [colorBlueBg, colorRedBg] = ['unset', 'unset'];
@@ -81,6 +83,12 @@ export default function PelitaMatch({
   const [team_info1, team_info2] = gameState.team_infos;
   const [group1, group2] = gameState.team_specs;
 
+  const say = subtleGameOver ? ['', '', '', ''] : gameState.say;
+
+  if (subtleGameOver && gameState.gameover) {
+    footer = gameState.whowins == 2 ? 'DRAW' : `${gameState.team_names[gameState.whowins]} wins!`;
+  }
+
   return (
     <div
       ref={root}
@@ -97,13 +105,13 @@ export default function PelitaMatch({
       <h2 className={`flex flex-row text-xl p-2 team-names opacity-0`} ref={addToReveal}>
         <span className="basis-1/2 text-right w-64 blue-bot">
           <span className="p-1 blue-bot-bg">
-            <small>{team_info1}</small> <b>{team1}</b> {gameState.game_stats.score[0]}
+            <small>{team_info1}</small> <b className={(gameState.gameover && gameState.whowins === 0) ? "underline" : "" }>{team1}</b> {gameState.game_stats.score[0]}
           </span>
         </span>
         <span className="basis-1 px-2">:</span>
         <span className="basis-1/2 text-left w-64 red-bot">
           <span className="p-1 red-bot-bg">
-            {gameState.game_stats.score[1]} <b>{team2}</b> <small>{team_info2}</small>
+            {gameState.game_stats.score[1]} <b className={(gameState.gameover && gameState.whowins === 1) ? "underline" : "" }>{team2}</b> <small>{team_info2}</small>
           </span>
         </span>
       </h2>
@@ -130,12 +138,13 @@ export default function PelitaMatch({
         food={gameState.food}
         bots={gameState.bots}
         team_names={gameState.team_names}
-        say={gameState.say}
+        say={say}
         whowins={gameState.whowins}
         gameover={gameState.gameover}
         round={gameState.round}
         turn={gameState.turn}
         do_animate={do_animate}
+        gameOverScreen={!subtleGameOver}
       ></Maze>
 
       <div className={`flex flex-row text-xs text-slate-600 footer opacity-0`} ref={addToReveal}>

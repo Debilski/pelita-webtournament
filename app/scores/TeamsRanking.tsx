@@ -279,17 +279,20 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
               <PelitaReplay
                 src={`${HOST}/game_replay/${replay.uuid}`}
                 colorMap={
-                    colorMode ?
-                    {
+                  colorMode
+                    ? {
                         [replay.slug1]: `${colorFromString(replay.slug1)}`,
                         [replay.slug2]: `${colorFromString(replay.slug2)}`,
-                } : undefined}
+                      }
+                    : undefined
+                }
                 team_specs={[replay.slug1, replay.slug2]}
                 rawGameState={true}
                 startEnd={true}
                 hasQuit={true}
                 hasFF={true}
-                onQuit={() => setReplay(null)}
+                sublteGameOver={!colorMode}
+                onQuit={() => { setReplay(null); }}
               ></PelitaReplay>
             </div>
           </aside>

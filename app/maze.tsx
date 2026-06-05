@@ -526,6 +526,7 @@ function Maze({
   round,
   turn,
   do_animate,
+  gameOverScreen = true
 }: {
   game_uuid: string;
   shape: Pos;
@@ -539,6 +540,7 @@ function Maze({
   round: number;
   turn: number;
   do_animate: boolean;
+  gameOverScreen?: boolean;
 }) {
   const [width, height] = shape;
   const [a, x, b, y] = bots;
@@ -911,7 +913,7 @@ function Maze({
             }
           </g>
 
-          {gameover ? (
+          {gameover && gameOverScreen ? (
             <>
               <text
                 fontSize={((height * cellSize) / 8) * 1.1}
