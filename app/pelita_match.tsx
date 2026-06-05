@@ -83,7 +83,7 @@ export default function PelitaMatch({
   const [team_info1, team_info2] = gameState.team_infos;
   const [group1, group2] = gameState.team_specs;
 
-  const say = subtleGameOver ? ['', '', '', ''] : gameState.say;
+  const say: [string, string, string, string] = subtleGameOver ? ['', '', '', ''] : gameState.say;
 
   if (subtleGameOver && gameState.gameover) {
     footer = gameState.whowins == 2 ? 'DRAW' : `${gameState.team_names[gameState.whowins]} wins!`;
