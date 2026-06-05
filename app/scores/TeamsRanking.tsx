@@ -156,12 +156,12 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
         </span>
       </div>
 
-      <div className="relative overflow-x-auto shadow-xs rounded border">
-        <table className="w-full text-sm text-left rtl:text-right">
-          <thead className="text-sm border-b-4 rounded border">
+      <div className="relative overflow-x-auto shadow-xs rounded border border-neutral-800">
+        <table className="w-full text-xs text-left rtl:text-right md:text-sm">
+          <thead className="text-xs md:text-sm border-b-4 rounded border border-neutral-800">
             <tr>
               {headers.map(header => (
-                <th key={header} className="px-6 py-3 font-medium">
+                <th key={header} className="px-2 md:px-6 py-1 md:py-3 font-medium">
                   {header}
                 </th>
               ))}
@@ -180,28 +180,28 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
                 );
                 const padding =
                   expandTeam === team.slug && !loading && winsLosses[team.slug]
-                    ? 'pt-4 py-0.5'
-                    : 'py-4';
+                    ? 'pt-1 md:pt-4 py-0.5'
+                    : 'pt-1 md:py-4';
 
                 return (
                   <React.Fragment key={team.id}>
                     <tr
-                      className="border-t hover:bg-amber-50 dark:hover:bg-gray-700"
+                      className="border-t border-neutral-800 hover:bg-amber-50 dark:hover:bg-gray-700"
                       onClick={() => toggleTeam(team.slug)}
                     >
-                      <td className={`px-6 ${padding}`}>{team_name}</td>
-                      <td className={`px-6 ${padding}`}>{team.wins + team.draws + team.losses}</td>
-                      <td className={`px-6 ${padding}`}>{team.wins}</td>
-                      <td className={`px-6 ${padding}`}>{team.draws}</td>
-                      <td className={`px-6 ${padding}`}>{team.losses}</td>
-                      <td className={`px-6 ${padding}`}>
+                      <td className={`px-2 md:px-6 ${padding}`}>{team_name}</td>
+                      <td className={`px-2 md:px-6 ${padding}`}>{team.wins + team.draws + team.losses}</td>
+                      <td className={`px-2 md:px-6 ${padding}`}>{team.wins}</td>
+                      <td className={`px-2 md:px-6 ${padding}`}>{team.draws}</td>
+                      <td className={`px-2 md:px-6 ${padding}`}>{team.losses}</td>
+                      <td className={`px-2 md:px-6 ${padding}`}>
                         {team.score < 0 ? '' : <>&nbsp;</>}
                         {team.score.toFixed(2)}
                       </td>
-                      <td className={`px-6 ${padding}`}>{team.mu.toFixed(2)}</td>
-                      <td className={`px-6 ${padding}`}>{team.sigma.toFixed(2)}</td>
-                      <td className={`px-6 ${padding}`}>{team.num_timeouts}</td>
-                      <td className={`px-6 ${padding}`}>{team.num_fatals}</td>
+                      <td className={`px-2 md:px-6 ${padding}`}>{team.mu.toFixed(2)}</td>
+                      <td className={`px-2 md:px-6 ${padding}`}>{team.sigma.toFixed(2)}</td>
+                      <td className={`px-2 md:px-6 ${padding}`}>{team.num_timeouts}</td>
+                      <td className={`px-2 md:px-6 ${padding}`}>{team.num_fatals}</td>
                     </tr>
 
                     {expandTeam === team.slug && loading && !winsLosses[team.slug] && (
@@ -222,13 +222,13 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
                           const total = a.draws + a.wins + a.losses;
                           const score = (a.wins - a.losses) / total;
                           const padding =
-                            idx === winsLosses[team.slug].length - 1 ? 'pb-4 py-0.5' : 'py-0.5';
+                            idx === winsLosses[team.slug].length - 1 ? 'pb-1 md:pb-4 py-0.5' : 'py-0.5';
                           return (
                             <tr
                               key={a.opponent}
                               className="hover:bg-amber-50 dark:hover:bg-gray-700"
                             >
-                              <td className={`px-6 ${padding}`}>
+                              <td className={`px-2 md:px-6 ${padding}`}>
                                 <span
                                   style={{
                                     color: colorFromString(a.opponent),
@@ -238,15 +238,15 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
                                 </span>{' '}
                                 {a.opponent}
                               </td>
-                              <td className={`px-6 ${padding}`}>{total}</td>
-                              <td className={`px-6 ${padding}`}>{a.wins}</td>
-                              <td className={`px-6 ${padding}`}>{a.draws}</td>
-                              <td className={`px-6 ${padding}`}>{a.losses}</td>
-                              <td className={`px-6 ${padding}`}>
+                              <td className={`px-2 md:px-6 ${padding}`}>{total}</td>
+                              <td className={`px-2 md:px-6 ${padding}`}>{a.wins}</td>
+                              <td className={`px-2 md:px-6 ${padding}`}>{a.draws}</td>
+                              <td className={`px-2 md:px-6 ${padding}`}>{a.losses}</td>
+                              <td className={`px-2 md:px-6 ${padding}`}>
                                 {score < 0 ? '' : <>&nbsp;</>}
                                 {score.toFixed(2)}
                               </td>
-                              <td className={`px-6 ${padding}`} colSpan={4}>
+                              <td className={`px-2 md:px-6 ${padding}`} colSpan={4}>
                                 <Matches
                                   team={team.slug}
                                   opponent={a.opponent}
@@ -277,7 +277,7 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
         >
           <aside className="absolute flex justify-center items-center inset-0">
             <div
-              className=" border rounded bg-white dark:bg-gray-800 p-8 w-1/2"
+              className=" border rounded bg-white dark:bg-gray-800 p-8 w-11/12 md:w-1/2"
               onClick={e => e.stopPropagation()}
             >
               <PelitaReplay
