@@ -5,7 +5,7 @@ const HOST = "https://pelita.itbportal.biologie.hu-berlin.de/pyapi"
 
 async function getTeams() {
   const res = await fetch(`${HOST}/team_stats`, {
-    cache: 'no-store',
+    // cache: 'no-store',
   });
 
   if (!res.ok) throw new Error('Failed to fetch teams');
