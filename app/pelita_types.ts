@@ -54,7 +54,7 @@ export interface ObserveGameState {
   say: Tuple4<string>;
   timeout_length: number;
   error_limit: number;
-  num_errors: [number, number];
+  num_errors?: [number, number];
 }
 
 export type ObserveGameStateL = ObserveGameState[];
@@ -67,7 +67,7 @@ export interface RequestedMove {
 
 export interface GameStats {
   score: [number, number];
-  num_errors: [number, number];
+  num_errors?: [number, number];
   kills: [number, number, number, number];
   deaths: [number, number, number, number];
   team_time: [number, number];

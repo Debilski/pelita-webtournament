@@ -83,6 +83,21 @@ export default function PelitaMatch({
   const [team_info1, team_info2] = gameState.team_infos;
   const [group1, group2] = gameState.team_specs;
 
+  const stats1 = <>
+          {gameState.game_stats.num_errors ? `Errors: ${gameState.game_stats.num_errors[0]}, ` : ""}Kills:{' '}
+          {gameState.game_stats.kills[0] + gameState.game_stats.kills[2]}, Deaths:{' '}
+          {gameState.game_stats.deaths[0] + gameState.game_stats.deaths[2]}, Time:{' '}
+          {gameState.game_stats.team_time[0].toFixed(2)}{' '}
+  </>;
+
+  const stats2 = <>
+          {gameState.game_stats.num_errors ? `Errors: ${gameState.game_stats.num_errors[1]}, ` : ""}Kills:{' '}
+          {gameState.game_stats.kills[1] + gameState.game_stats.kills[3]}, Deaths:{' '}
+          {gameState.game_stats.deaths[1] + gameState.game_stats.deaths[3]}, Time:{' '}
+          {gameState.game_stats.team_time[1].toFixed(2)}{' '}
+          </>;
+
+
   const say: [string, string, string, string] = subtleGameOver ? ['', '', '', ''] : gameState.say;
 
   if (subtleGameOver && gameState.gameover) {
@@ -117,16 +132,10 @@ export default function PelitaMatch({
       </h2>
       <div className={`flex flex-row text-xs team-stats opacity-0`} ref={addToReveal}>
         <div className="basis-1/2 w-64 px-2">
-          Errors: {gameState.game_stats.num_errors[0]}, Kills:{' '}
-          {gameState.game_stats.kills[0] + gameState.game_stats.kills[2]}, Deaths:{' '}
-          {gameState.game_stats.deaths[0] + gameState.game_stats.deaths[2]}, Time:{' '}
-          {gameState.game_stats.team_time[0].toFixed(2)}{' '}
+          {stats1}
         </div>
         <div className="basis-1/2 text-right w-64 px-2">
-          Errors: {gameState.game_stats.num_errors[1]}, Kills:{' '}
-          {gameState.game_stats.kills[1] + gameState.game_stats.kills[3]}, Deaths:{' '}
-          {gameState.game_stats.deaths[1] + gameState.game_stats.deaths[3]}, Time:{' '}
-          {gameState.game_stats.team_time[1].toFixed(2)}{' '}
+          {stats2}
         </div>
       </div>
 
