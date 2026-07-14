@@ -1,6 +1,6 @@
 'use client';
 
-import { animate, createScope, createTimeline, DOMTarget, Scope, svg, Timeline } from 'animejs';
+import { animate, createScope, createTimeline, FunctionValue, Scope, svg, Timeline } from 'animejs';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
@@ -613,9 +613,7 @@ function Maze({
             // duration: 2000,
             // duration: function (el, i) { return wallSpeeds[i]; },
             strokeWidth: [2, 2],
-            delay: function (el: DOMTarget, i: number) {
-              return i * 25;
-            },
+            delay: ((_target, index: number) => index * 25) as FunctionValue, // need to help the compiler
             // delay: function (el, i) { return wallDelays[i]; },
             // delay: function (el, i) { return ((i == 0) ? 0 : 2000) + i * 25 },
             // delay: function (el, i) { return ((i == 0) ? 0 : Math.floor(Math.random() * 2500)) },
