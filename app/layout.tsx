@@ -45,7 +45,7 @@ const abrilFatface = Abril_Fatface({
 
 export const metadata: Metadata = {
   title: 'Pelita Tournament',
-  description: 'ASPP2025',
+  description: 'ASPP',
 };
 
 export default function RootLayout({
