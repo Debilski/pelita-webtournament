@@ -53,6 +53,10 @@ function Matches({
       default:
         break;
     }
+    // TODO: API should make it clear that this is only for the queried main team
+    if (match.had_fatal_error) {
+      color = 'black';
+    }
     return (
       <>
         <ColoredDot color={color}></ColoredDot>
@@ -126,7 +130,6 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
     'Score',
     'μ',
     'σ',
-    '# Timeouts',
     '# Fatal Errors',
   ];
 
@@ -200,13 +203,12 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
                       </td>
                       <td className={`px-2 md:px-6 ${padding}`}>{team.mu.toFixed(2)}</td>
                       <td className={`px-2 md:px-6 ${padding}`}>{team.sigma.toFixed(2)}</td>
-                      <td className={`px-2 md:px-6 ${padding}`}>{team.num_timeouts}</td>
                       <td className={`px-2 md:px-6 ${padding}`}>{team.num_fatals}</td>
                     </tr>
 
                     {expandTeam === team.slug && loading && !winsLosses[team.slug] && (
                       <tr>
-                        <td colSpan={10}>
+                        <td colSpan={8}>
                           <p>Loading...</p>
                         </td>
                       </tr>
@@ -253,7 +255,6 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
                                   setReplay={uuid => setReplay(uuid)}
                                 ></Matches>
                               </td>
-                              <td></td>
                               <td></td>
                               <td></td>
                             </tr>

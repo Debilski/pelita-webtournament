@@ -10,7 +10,6 @@ export interface Team {
     score: number;
     mu: number;
     sigma: number;
-    num_timeouts: number;
     num_fatals: number;
 }
 
@@ -30,6 +29,7 @@ export interface Match {
     id: number;
     game_uuid: string;
     outcome: 0 | 1 | 2;
+    had_fatal_error: boolean;
     team_color: 1 | 2;
     team: string;
     opponent: string;
