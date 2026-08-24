@@ -123,14 +123,14 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
 
   const headers = [
     'Team',
-    '# Matches',
-    '# Wins',
-    '# Draws',
-    '# Losses',
+    'Matches',
+    'Wins',
+    'Draws',
+    'Losses',
     'Score',
     'μ',
     'σ',
-    '# Fatal Errors',
+    'Errors',
   ];
 
   function colorFromString(str: string) {
