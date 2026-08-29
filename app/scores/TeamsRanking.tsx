@@ -186,6 +186,11 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
                     ? 'pt-1 md:pt-4 py-0.5'
                     : 'pt-1 md:py-4';
 
+                const nMatches = team.wins + team.draws + team.losses;
+                const percWins = (team.wins / nMatches * 100).toFixed(1);
+                const percDraws = (team.draws / nMatches * 100).toFixed(1);
+                const percLosses = (team.losses / nMatches * 100).toFixed(1);
+
                 return (
                   <React.Fragment key={team.id}>
                     <tr
@@ -193,10 +198,10 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
                       onClick={() => toggleTeam(team.slug)}
                     >
                       <td className={`px-2 md:px-6 ${padding}`}>{team_name}</td>
-                      <td className={`px-2 md:px-6 ${padding}`}>{team.wins + team.draws + team.losses}</td>
-                      <td className={`px-2 md:px-6 ${padding}`}>{team.wins}</td>
-                      <td className={`px-2 md:px-6 ${padding}`}>{team.draws}</td>
-                      <td className={`px-2 md:px-6 ${padding}`}>{team.losses}</td>
+                      <td className={`px-2 md:px-6 ${padding}`}>{nMatches}</td>
+                      <td className={`px-2 md:px-6 ${padding}`} title={`${percWins} %`}>{team.wins}</td>
+                      <td className={`px-2 md:px-6 ${padding}`} title={`${percDraws} %`}>{team.draws}</td>
+                      <td className={`px-2 md:px-6 ${padding}`} title={`${percLosses} %`}>{team.losses}</td>
                       <td className={`px-2 md:px-6 ${padding}`}>
                         {team.score < 0 ? '' : <>&nbsp;</>}
                         {team.score.toFixed(2)}
