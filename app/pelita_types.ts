@@ -21,6 +21,13 @@ export type RootMsg =
       __data__: TournamentMetadata;
     };
 
+export interface FatalError {
+  type: string;
+  description: string;
+  turn: number;
+  round: number;
+}
+
 export interface ObserveGameState {
   game_uuid: string;
   walls: Pos[];
@@ -34,7 +41,7 @@ export interface ObserveGameState {
   bots: Tuple4<Pos>;
   team_specs?: [string, string];
   score: [number, number];
-  fatal_errors: any[][];
+  fatal_errors: [FatalError[], FatalError[]];
   errors: null[];
   max_rounds: number;
   timeout: number;
@@ -89,6 +96,8 @@ export interface GameState {
   round: number;
   max_rounds: number;
   turn: number;
+  fatal_errors: [FatalError[], FatalError[]];
+}
 }
 
 export interface TournamentMetadata {
@@ -134,6 +143,7 @@ export function convertGameState(gs: ObserveGameState): GameState {
     },
     whowins: gs.whowins ?? -1,
     gameover: gs.gameover,
+    fatal_errors: gs.fatal_errors,
   };
 }
 

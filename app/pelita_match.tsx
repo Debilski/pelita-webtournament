@@ -5,7 +5,7 @@ import { colorNameToCode } from 'color-name-to-code';
 import { useEffect, useEffectEvent, useRef } from 'react';
 
 import Maze from './maze';
-import { GameState } from './pelita_types';
+import { FatalError, GameState } from './pelita_types';
 
 const defaultColors: [string, string] = ['rgb(94, 158, 217)', 'rgb(235, 90, 90)'];
 
@@ -23,6 +23,10 @@ function hexColBrightness(hexCol: string) {
   const hsp = Math.sqrt(0.299 * (r * r) + 0.587 * (g * g) + 0.114 * (b * b));
 
   return hsp;
+}
+
+function showError(error: FatalError) {
+  return `Round ${error.round}, ${error.type}: ${error.description}`;
 }
 
 export default function PelitaMatch({
@@ -159,7 +163,11 @@ export default function PelitaMatch({
       <div className={`flex flex-row text-xs text-slate-600 footer opacity-0`} ref={addToReveal}>
         <div className="basis-1/2 w-64 px-2">{footer}</div>
         <div className="basis-1/2 text-right w-64 px-2">
-          Round {gameState.round}/{gameState.max_rounds}
+          <>
+          {gameState.fatal_errors[0].length != 0 && gameState.fatal_errors[0].map(showError)}
+          {gameState.fatal_errors[1].length != 0 && gameState.fatal_errors[1].map(showError)}
+          {gameState.fatal_errors[0].length == 0 && gameState.fatal_errors[1].length == 0 && (<>Round {gameState.round}/{gameState.max_rounds}</>)}
+          </>
         </div>
       </div>
     </div>

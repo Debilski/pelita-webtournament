@@ -61,6 +61,7 @@ function dummyGameState(width: number, height: number, make_random = true) {
     round: 0,
     max_rounds: 0,
     turn: 0,
+    fatal_errors: [[], []]
   };
   return gameState;
 }
