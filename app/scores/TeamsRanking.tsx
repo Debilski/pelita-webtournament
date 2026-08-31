@@ -38,7 +38,7 @@ function Matches({
   }, []);
 
   function DisplayMatch({ match }: { match: Match }) {
-    console.log(match);
+    // console.log(match);
     let color = 'red';
     switch (match.outcome) {
       case 0:

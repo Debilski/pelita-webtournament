@@ -39,7 +39,7 @@ export default function PelitaReplay({
 
   colorMap ??= {};
 
-  console.log(colorMap);
+  // console.log(colorMap);
 
   useEffect(() => {
     void fetch(src)
@@ -114,8 +114,6 @@ export default function PelitaReplay({
   current.game_uuid ??= src;
 
   const buttonCols = 4 + (hasFF ? 1 : 0) + (hasQuit ? 1 : 0);
-
-  console.log(current);
 
   return (
     <div className="">
