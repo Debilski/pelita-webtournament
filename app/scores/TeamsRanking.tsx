@@ -230,6 +230,11 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
                           const score = (a.wins - a.losses) / total;
                           const padding =
                             idx === winsLosses[team.slug].length - 1 ? 'pb-1 md:pb-4 py-0.5' : 'py-0.5';
+
+                          const percWins = (a.wins / total * 100).toFixed(1);
+                          const percDraws = (a.draws / total * 100).toFixed(1);
+                          const percLosses = (a.losses / total * 100).toFixed(1);
+
                           return (
                             <tr
                               key={a.opponent}
@@ -246,9 +251,9 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
                                 {a.opponent}
                               </td>
                               <td className={`px-2 md:px-6 ${padding}`}>{total}</td>
-                              <td className={`px-2 md:px-6 ${padding}`}>{a.wins}</td>
-                              <td className={`px-2 md:px-6 ${padding}`}>{a.draws}</td>
-                              <td className={`px-2 md:px-6 ${padding}`}>{a.losses}</td>
+                              <td className={`px-2 md:px-6 ${padding}`} title={`${percWins} %`}>{a.wins}</td>
+                              <td className={`px-2 md:px-6 ${padding}`} title={`${percDraws} %`}>{a.draws}</td>
+                              <td className={`px-2 md:px-6 ${padding}`} title={`${percLosses} %`}>{a.losses}</td>
                               <td className={`px-2 md:px-6 ${padding}`}>
                                 {score < 0 ? '' : <>&nbsp;</>}
                                 {score.toFixed(2)}
