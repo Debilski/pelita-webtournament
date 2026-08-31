@@ -306,7 +306,7 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
                 startEnd={true}
                 hasQuit={true}
                 hasFF={true}
-                sublteGameOver={!colorMode}
+                subtleGameOver={!colorMode}
                 onQuit={() => { setReplay(null); }}
               ></PelitaReplay>
             </div>
