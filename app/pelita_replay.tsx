@@ -110,14 +110,14 @@ export default function PelitaReplay({
     colors[1] = colorMap[team_specs[1]];
   }
 
-  const current = gameData[position];
-  current.game_uuid ??= src;
+  const currentGameState = gameData[position];
+  currentGameState.game_uuid ??= src;
 
   const buttonCols = 4 + (hasFF ? 1 : 0) + (hasQuit ? 1 : 0);
 
   return (
     <div className="">
-      <PelitaMatch do_animate={false} footer="" colors={colors} gameState={current} subtleGameOver={subtleGameOver}></PelitaMatch>
+      <PelitaMatch do_animate={false} footer="" colors={colors} gameState={currentGameState} subtleGameOver={subtleGameOver}></PelitaMatch>
 
       <div className={`grid grid-cols-${4 + (hasFF ? 1 : 0) + (hasQuit ? 1 : 0)} gap-4 items-center justify-between`}>
 
