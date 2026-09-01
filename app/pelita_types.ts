@@ -98,7 +98,6 @@ export interface GameState {
   turn: number;
   fatal_errors: [FatalError[], FatalError[]];
 }
-}
 
 export interface TournamentMetadata {
   teams: [string: TeamMetadata];
