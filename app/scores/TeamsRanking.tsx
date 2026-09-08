@@ -138,6 +138,8 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
     return `#${md5(str).slice(0, 6)}`;
   }
 
+  const scores: Record<string, number> = Object.fromEntries(teams.map((t) => [t.slug, t.score]));
+
   return (
     <>
       {/* <div className="w-sm">
@@ -222,8 +224,9 @@ function TeamsRanking({ teams }: { teams: Team[] }) {
                     {expandTeam === team.slug && !loading && winsLosses[team.slug] && (
                       <>
                         {winsLosses[team.slug]
-                        .toSorted((a, b) => (a.wins - a.losses) / (a.draws + a.wins + a.losses) - (b.wins - b.losses)/ (b.draws + b.wins + b.losses))
-                        .toSorted((a, b) => a.draws + a.wins + a.losses - b.draws - b.wins - b.losses)
+                        // .toSorted((a, b) => (a.wins - a.losses) / (a.draws + a.wins + a.losses) - (b.wins - b.losses)/ (b.draws + b.wins + b.losses))
+                        // .toSorted((a, b) => a.draws + a.wins + a.losses - b.draws - b.wins - b.losses)
+                        .toSorted((a, b) => scores[a.opponent] - scores[b.opponent])
                         .toReversed()
                         .map((a, idx) => {
                           const total = a.draws + a.wins + a.losses;
